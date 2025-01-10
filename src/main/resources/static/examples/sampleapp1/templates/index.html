@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sample App Embedded Signing | SignNow</title>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" type="image/x-icon" href="/css/bootstrap.min.css">
+</head>
+<body>
+<div id="form_block" class="min-vh-100 bg-body-tertiary flex-column py-4 px-3 d-flex justify-content-center align-items-center">
+    <h1 class="mb-4 text-center">Welcome to SignNow's Embedded Signing sample flow</h1>
+    <p class="text-secondary text-center mb-5">This sample flow will demonstrate how embedded signing works with pre-filled data.<br>The data you enter below will be used to fill out the corresponding fields in the sample document.</p>
+    <form class="p-4 br-3 bg-white rounded shadow form-container" id="form">
+        <div class="form-group mb-3">
+            <label for="firstNameInput">First name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="firstNameInput" required minlength="1">
+        </div>
+        <div class="form-group mb-3">
+            <label for="lastNameInput">Last name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="lastNameInput" required minlength="1">
+        </div>
+        <div class="form-group mb-3">
+            <label for="commentArea">Comment</label>
+            <textarea class="form-control" id="commentArea" rows="2"></textarea>
+        </div>
+        <div class="form-group mb-3">
+            <label for="sendToInput">Send to <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="sendToInput" required minlength="1">
+        </div>
+        <button class="btn btn-primary" id="continueButton" type="submit">Continue</button>
+        <button class="btn btn-primary d-none" id="loadingButton" type="submit" disabled>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Loading...
+        </button>
+        <div class="alert alert-danger mt-4 mb-0 d-none overflow-hidden" id="alertMessage" role="alert">
+            Something went wrong.<br>Please try again later.
+        </div>
+    </form>
+    <p class="text-secondary text-center mt-5">Copyright (c) 2025 airSlate, Inc.<br>SignNow API Sample Application v0.0.1</p>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById('form');
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const firstName = document.getElementById('firstNameInput').value;
+            const lastName = document.getElementById('lastNameInput').value;
+            const comment = document.getElementById('commentArea').value;
+            const signerEmail = document.getElementById('sendToInput').value;
+
+            document.getElementById('continueButton').classList.add('d-none');
+            document.getElementById('loadingButton').classList.remove('d-none');
+
+            try {
+                const response = await fetch('/examples/sampleapp1', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        first_name: firstName,
+                        last_name: lastName,
+                        comment: comment,
+                        signer_email: signerEmail,
+                    }),
+                });
+
+                if (response.ok) {
+                    const responseBody = await response.json();
+                    if (responseBody.data.link) {
+                        window.location.href = responseBody.data.link;
+                    } else {
+                        throw new Error('No link received from server');
+                    }
+                } else {
+                    throw new Error('Failed to send data');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                const alertMessage = document.getElementById('alertMessage');
+                alertMessage.textContent = 'Something went wrong. Please try again later.';
+                alertMessage.classList.remove('d-none');
+            } finally {
+                document.getElementById('loadingButton').classList.add('d-none');
+                document.getElementById('continueButton').classList.remove('d-none');
+            }
+        });
+    });
+</script>
+</body>
+</html>
