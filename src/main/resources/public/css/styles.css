@@ -1,55 +1,90 @@
-.btn.btn-primary {
-    --bs-btn-bg: #0777cf;
-    --bs-btn-border-color: #0777cf;
-    --bs-btn-hover-bg: #348fd7;
-    --bs-btn-hover-border-color: #348fd7;
-    --bs-btn-active-bg: #076dbd;
-    --bs-btn-active-border-color: #076dbd;
+body {
+    font-family: Opens, sans-serif;
+    font-size: 14px;
+    font-style: normal;
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff;
+    color: #38424B;
+}
+
+h4 {
+    color: #2F373E;
+    font-size: 20px;
+    font-style: normal;
     font-weight: 600;
+    line-height: 24px;
 }
 
-.btn.btn-primary:disabled {
-    --bs-btn-disabled-bg: #bbd9f1;
-    --bs-btn-disabled-border-color: #bbd9f1;
-    --bs-btn-disabled-opacity: 1;
-    cursor: not-allowed;
-}
-
-.btn.btn-primary:active, .btn.btn-primary:focus {
-    box-shadow: 0 0 0 1px #fff, 0 0 0 3px #667988;
-}
-
-.text-secondary {
-    --bs-secondary-rgb: 84,100,112;
-}
-
-.fs-5-1 {
-    font-size: 1.125rem;
-}
-
-.fs-7 {
-    font-size: 0.875rem;
-}
-
-.mb-6 {
-    margin-bottom: 6rem;
-}
-
-.mb-8 {
-    margin-bottom: 8rem;
-}
-
-.form-container {
+#form-container {
     width: 100%;
-    max-width: 25rem;
+    max-width: 550px;
+    padding: 20px;
+    margin: 200px auto 0;
 }
 
-.mt-5 {
-    margin-top: 5rem;
+form {
+    display: flex;
+    flex-direction: column;
 }
 
-@media (max-width: 575.98px) {
-    html {
-        font-size: 14px;
-    }
+form .sn-input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+form label {
+    margin-bottom: 2px;
+}
+
+form input {
+    height: 32px;
+    padding: 0 2px 0 8px;
+}
+
+button {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: none;
+}
+
+.button-primary {
+    background-color: #0777CF;
+    color: #fff;
+    cursor: pointer;
+}
+
+.button-secondary {
+    background-color: #E3E6E9;
+    color: #38424B;
+    font-weight: bold;
+}
+
+.divider {
+    height: 1px;
+    background-color: #E3E6E9;
+}
+
+.copyright {
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 400;
+    color: #546470;
+    text-align: center;
+    line-height: 16px;
+}
+
+#thank-you-container {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.thank-you-message {
+    max-width: 456px;
+    margin: 150px auto 0;
+}
+
+#thank-you-container p {
+    font-size: 14px;
+    font-weight: 400;
 }

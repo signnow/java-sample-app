@@ -31,7 +31,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
 
 @Controller
@@ -51,8 +50,9 @@ public class IndexController implements ExampleInterface {
         String signerFirstName = data.get("first_name");
         String signerLastName = data.get("last_name");
         String comment = data.get("comment");
-        String signerEmail = data.get("signer_email");
+        String signerEmail = "first@signnow.com";
         String signerRole = "Customer";
+        String redirectUrl = "http://localhost:8080/examples/sampleapp1?page=thank-you";
         int embeddedInviteLinkExpirationTime = 45;
 
         String bearerToken = "";
@@ -136,7 +136,7 @@ public class IndexController implements ExampleInterface {
 
         // 5. Send embedded invite
         InviteCollection invites = new InviteCollection();
-        invites.add(new Invite(signerEmail, roleId, 1, signerFirstName, signerLastName));
+        invites.add(new Invite(signerEmail, roleId, 1, signerFirstName, signerLastName, redirectUrl, redirectUrl, "blank"));
         DocumentInvitePostRequest inviteRequest = new DocumentInvitePostRequest(invites, null);
         inviteRequest.withDocumentId(documentId);
         DocumentInvitePostResponse inviteResponse =
@@ -159,10 +159,6 @@ public class IndexController implements ExampleInterface {
                         .withFieldInviteId(embeddedInviteId);
         DocumentInviteLinkPostResponse linkResponse =
                 (DocumentInviteLinkPostResponse) client.send(linkRequest).getResponse();
-
-        System.out.println("Document ID: " + documentId);
-        System.out.println("Document embedded invite ID: " + embeddedInviteId);
-        System.out.println("Document embedded invite link: " + linkResponse.getData().getLink());
 
         return ResponseEntity.ok()
                 .header("Content-Type", "application/json")
