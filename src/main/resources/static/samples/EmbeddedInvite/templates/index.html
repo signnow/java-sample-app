@@ -15,7 +15,9 @@
     <meta property="og:image" content="">
     <meta property="og:image:alt" content="">
 
-    <link rel="icon" href="/js/favicon.ico" sizes="any">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
     <meta name="theme-color" content="#fafafa">
 </head>
 
@@ -38,9 +40,13 @@
                 <input id="commentArea" placeholder="Comment" name="commentArea">
             </div>
 
-            <button type="submit" class="button-primary">Continue</button>
+            <button type="submit" class="button-primary" id="continueButton">Continue</button>
+            <button class="btn btn-dark d-none" id="loadingButton" type="submit" disabled>
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Loading...
+            </button>
         </form>
-        <div class="copyright mt-3">Copyright (c) 2025 airSlate, Inc., SignNow API Sample Application v3.0</div>
+        <div class="copyright mt-3">Copyright (c) 2024 airSlate, Inc., SignNow API Sample Application v3.0</div>
     </div>
 </div>
 
@@ -49,7 +55,7 @@
     <div class="thank-you-message">
         <img src="/img/doc-completed.png" alt="signNow" class="mb-3" />
         <h4>Your Document Was Sent</h4>
-        <p class="mb-4">You have successfully sent a document for signing. Once your document has been signed, you will receive a notification.</p>
+        <p class="mb-4">You have successfully sent a document for signing. Once your document has been signed, you will receive a notification..</p>
         <button type="button" class="button-secondary">Finish Demo</button>
     </div>
 </div>
@@ -72,12 +78,16 @@
             const form = document.getElementById('contact-form');
             form.addEventListener('submit', async (event) => {
                 event.preventDefault();
+
+                document.getElementById('loadingButton').classList.remove('d-none');
+                document.getElementById('continueButton').classList.add('d-none')
+
                 const firstName = document.getElementById('firstNameInput').value;
                 const lastName = document.getElementById('lastNameInput').value;
                 const comment = document.getElementById('commentArea').value;
 
                 try {
-                    const response = await fetch('/examples/sampleapp1', {
+                    const response = await fetch('/api/samples/EmbeddedInvite', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -90,9 +100,9 @@
                     });
 
                     if (response.ok) {
-                        const responseBody = await response.json();
-                        if (responseBody.data.link) {
-                            window.location.href = responseBody.data.link;
+                        const data = await response.json();
+                        if (data.link) {
+                            window.location.href = data.link;
                         } else {
                             throw new Error('No link received from server');
                         }

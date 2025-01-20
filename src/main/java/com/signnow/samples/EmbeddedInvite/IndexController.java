@@ -1,8 +1,9 @@
-package com.signnow.javasampleapp.examples.sampleapp1;
+package com.signnow.samples.EmbeddedInvite;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.signnow.Sdk;
 import com.signnow.api.documentfield.request.DocumentPrefillPutRequest;
-import com.signnow.javasampleapp.examples.ExampleInterface;
+import com.signnow.javasampleapp.ExampleInterface;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
@@ -22,10 +23,8 @@ import com.signnow.api.embeddedinvite.request.data.InviteCollection;
 import com.signnow.api.embeddedinvite.response.DocumentInviteLinkPostResponse;
 import com.signnow.api.embeddedinvite.response.DocumentInvitePostResponse;
 import com.signnow.api.embeddedinvite.response.data.DataInvite;
-import com.signnow.api.embeddedinvite.response.data.DataInviteCollection;
 import com.signnow.core.ApiClient;
 import com.signnow.core.exception.SignNowApiException;
-import com.signnow.core.factory.SdkFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +37,7 @@ public class IndexController implements ExampleInterface {
 
     @Override
     public ResponseEntity<String> serveExample() throws IOException {
-        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/examples/sampleapp1/templates/index.html")));
+        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedInvite/templates/index.html")));
         return ResponseEntity.ok()
                 .header("Content-Type", "text/html")
                 .body(html);
@@ -52,18 +51,44 @@ public class IndexController implements ExampleInterface {
         String comment = data.get("comment");
         String signerEmail = "first@signnow.com";
         String signerRole = "Customer";
-        String redirectUrl = "http://localhost:8080/examples/sampleapp1?page=thank-you";
-        int embeddedInviteLinkExpirationTime = 45;
 
-        String bearerToken = "";
-        ApiClient client = SdkFactory.createApiClientWithBearerToken(bearerToken);
+        Sdk sdk = new Sdk();
+        ApiClient client = sdk.build().authenticate().getApiClient();
 
         // Step 1: Upload 1st document
-        DocumentPostRequest request = new DocumentPostRequest(new File("src/main/resources/static/examples/sampleapp1/sample.pdf"));
-        DocumentPostResponse response = (DocumentPostResponse) client.send(request).getResponse();
-        String documentId = response.getId();
+        DocumentPostResponse document = this.uploadDocument(client, "src/main/resources/static/samples/EmbeddedInvite/sample.pdf");
 
         // Step 2.1: Add fields with roles to the document
+        this.addFieldsToDocument(client, document.getId(), signerRole);
+
+        // Step 2.2: Prefill fields with values
+        this.prefillFields(client, document.getId(), signerFirstName, signerLastName, comment);
+
+        // 3. find the roleID by role name
+        String roleId = this.getSignerUniqueRoleId(client, document.getId(), signerRole);
+
+        // 4. Send embedded invite
+        DocumentInvitePostResponse inviteResponse = this.createEmbeddedInvite(client, document.getId(), signerEmail, roleId, signerFirstName, signerLastName);
+
+        // 5. Find invite ID
+        String embeddedInviteId = this.findInviteId(inviteResponse, signerEmail);
+
+        // 6. Create an embedded invite link for the embedded invite
+        String embeddedSigningLink = this.getEmbeddedInviteSigningLink(client, document.getId(), embeddedInviteId);
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/json")
+                .body(new ObjectMapper().writeValueAsString(Map.of(
+                        "link", embeddedSigningLink
+                )));
+    }
+
+    private DocumentPostResponse uploadDocument(ApiClient client, String filepath) throws SignNowApiException {
+        DocumentPostRequest request = new DocumentPostRequest(new File(filepath));
+        return (DocumentPostResponse) client.send(request).getResponse();
+    }
+
+    private void addFieldsToDocument(ApiClient client, String documentId, String signerRole) throws SignNowApiException {
         FieldCollection fields = new FieldCollection();
         fields.add(
                 new Field(
@@ -97,8 +122,9 @@ public class IndexController implements ExampleInterface {
         DocumentPutRequest putRequest = new DocumentPutRequest(fields);
         putRequest.withDocumentId(documentId);
         client.send(putRequest);
+    }
 
-        // Step 2.2: Prefill fields with values
+    private void prefillFields(ApiClient client, String documentId, String signerFirstName, String signerLastName, String comment) throws SignNowApiException {
         com.signnow.api.documentfield.request.data.FieldCollection prefilledFields = new com.signnow.api.documentfield.request.data.FieldCollection();
         prefilledFields.add(
                 new com.signnow.api.documentfield.request.data.Field(
@@ -118,13 +144,13 @@ public class IndexController implements ExampleInterface {
         DocumentPrefillPutRequest prefillRequest = new DocumentPrefillPutRequest(prefilledFields);
         prefillRequest.withDocumentId(documentId);
         client.send(prefillRequest);
+    }
 
-        // 3. Get the document by id to retrieve the role IDs
+    private String getSignerUniqueRoleId(ApiClient client, String documentId, String signerRole) throws SignNowApiException {
         DocumentGetRequest documentRequest = new DocumentGetRequest();
         documentRequest.withDocumentId(documentId);
         DocumentGetResponse documentResponse = (DocumentGetResponse) client.send(documentRequest).getResponse();
 
-        // 4. find the roleID by role name
         RoleCollection roles = documentResponse.getRoles();
         String roleId = "";
         for (Role role : roles) {
@@ -133,35 +159,36 @@ public class IndexController implements ExampleInterface {
                 break;
             }
         }
+        return roleId;
+    }
 
-        // 5. Send embedded invite
+    private DocumentInvitePostResponse createEmbeddedInvite(ApiClient client, String documentId, String signerEmail, String roleId, String signerFirstName, String signerLastName) throws SignNowApiException {
+        String redirectUrl = "http://localhost:8080/samples/EmbeddedInvite?page=thank-you";
         InviteCollection invites = new InviteCollection();
         invites.add(new Invite(signerEmail, roleId, 1, signerFirstName, signerLastName, redirectUrl, redirectUrl, "blank"));
         DocumentInvitePostRequest inviteRequest = new DocumentInvitePostRequest(invites, null);
         inviteRequest.withDocumentId(documentId);
-        DocumentInvitePostResponse inviteResponse =
-                (DocumentInvitePostResponse) client.send(inviteRequest).getResponse();
-        DataInviteCollection embeddedInvites = inviteResponse.getData();
+        return (DocumentInvitePostResponse) client.send(inviteRequest).getResponse();
+    }
 
-        // 6. Find invite ID
+    private String findInviteId(DocumentInvitePostResponse invite, String signerEmail) {
         String embeddedInviteId = "";
-        for (DataInvite embeddedInvite : embeddedInvites) {
+        for (DataInvite embeddedInvite : invite.getData()) {
             if (embeddedInvite.getEmail().equals(signerEmail)) {
                 embeddedInviteId = embeddedInvite.getId();
                 break;
             }
         }
+        return embeddedInviteId;
+    }
 
-        // 7. Create an embedded invite link for the embedded invite
+    private String getEmbeddedInviteSigningLink(ApiClient client, String documentId, String embeddedInviteId) throws SignNowApiException {
         DocumentInviteLinkPostRequest linkRequest =
-                new DocumentInviteLinkPostRequest("none", embeddedInviteLinkExpirationTime)
+                new DocumentInviteLinkPostRequest("none", 15)
                         .withDocumentId(documentId)
                         .withFieldInviteId(embeddedInviteId);
         DocumentInviteLinkPostResponse linkResponse =
                 (DocumentInviteLinkPostResponse) client.send(linkRequest).getResponse();
-
-        return ResponseEntity.ok()
-                .header("Content-Type", "application/json")
-                .body(new ObjectMapper().writeValueAsString(linkResponse));
+        return linkResponse.getData().getLink();
     }
 }
