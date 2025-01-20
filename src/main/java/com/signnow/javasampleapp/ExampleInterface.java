@@ -1,4 +1,4 @@
-package com.signnow.javasampleapp.examples;
+package com.signnow.javasampleapp;
 
 import com.signnow.core.exception.SignNowApiException;
 import org.springframework.http.ResponseEntity;

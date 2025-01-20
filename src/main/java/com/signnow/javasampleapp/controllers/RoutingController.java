@@ -1,7 +1,7 @@
 package com.signnow.javasampleapp.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.signnow.javasampleapp.examples.ExampleInterface;
+import com.signnow.javasampleapp.ExampleInterface;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -17,10 +17,10 @@ public class RoutingController {
 
     @GetMapping("/")
     public String root() {
-        return "redirect:/examples/sampleapp1"; // Default redirect
+        return "redirect:/samples/EmbeddedInvite"; // Default redirect
     }
 
-    @GetMapping("/examples/{exampleName}")
+    @GetMapping("/samples/{exampleName}")
     public ResponseEntity<String> routeExample(@PathVariable String exampleName) throws IOException {
         if (!exampleName.matches("^[a-zA-Z0-9_]+$")) {
             String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/error.html")));
@@ -28,7 +28,7 @@ public class RoutingController {
                     .header("Content-Type", "text/html")
                     .body(html);
         }
-        String controllerPath = "com.signnow.javasampleapp.examples." + exampleName + ".IndexController";
+        String controllerPath = "com.signnow.samples." + exampleName + ".IndexController";
         try {
             Class<?> controllerClass = Class.forName(controllerPath);
             Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
@@ -45,7 +45,7 @@ public class RoutingController {
                 .body(html);
     }
 
-    @PostMapping("/examples/{exampleName}")
+    @PostMapping("/api/samples/{exampleName}")
     public ResponseEntity<String> handleFormSubmission(
             @PathVariable String exampleName,
             @RequestBody String formData) throws IOException {
@@ -55,7 +55,7 @@ public class RoutingController {
                     .header("Content-Type", "text/html")
                     .body(html);
         }
-        String controllerPath = "com.signnow.javasampleapp.examples." + exampleName + ".IndexController";
+        String controllerPath = "com.signnow.samples." + exampleName + ".IndexController";
         try {
             Class<?> controllerClass = Class.forName(controllerPath);
             Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
