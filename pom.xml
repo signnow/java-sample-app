@@ -41,8 +41,8 @@
         </dependency>
         <dependency>
             <groupId>com.signnow</groupId>
-            <artifactId>java-sdk</artifactId>
-            <version>3.0.0</version>
+            <artifactId>signnow-java-sdk</artifactId>
+            <version>3.1.0</version>
         </dependency>
     </dependencies>
 
