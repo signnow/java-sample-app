@@ -17,7 +17,7 @@ public class RoutingController {
 
     @GetMapping("/")
     public String root() {
-        return "redirect:/samples/SalesProposalEmbeddedSending"; // Default redirect
+        return "redirect:/samples/HROnboardingSystem"; // Default redirect
     }
 
     @GetMapping("/samples/{exampleName}")

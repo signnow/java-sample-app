@@ -135,6 +135,7 @@ public class IndexController implements ExampleInterface {
         DocumentGetRequest getRequest = new DocumentGetRequest().withDocumentId(docId);
         DocumentGetResponse doc = (DocumentGetResponse) client.send(getRequest).getResponse();
 
+        //TODO: тут повертається linkedHashMap в якому взагалі немає неймів, лише ід поля, і вони явно не в форматі Field
         Set<String> fieldNames = new HashSet<>();
         doc.getFields().forEach(f -> fieldNames.add(((Field)f).getFieldName()));
 
