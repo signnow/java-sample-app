@@ -109,9 +109,9 @@ public class IndexController implements ExampleInterface {
     private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {
         DocumentDownloadGetRequest request = new DocumentDownloadGetRequest().withDocumentId(documentId);
         DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(request).getResponse();
-        //File file = (File) response.getFile();
-        byte[] content = null;//Files.readAllBytes(file.toPath());
-        //file.delete();
+        File file = response.getFile();
+        byte[] content = Files.readAllBytes(file.toPath());
+        file.delete();
         return content;
     }
 }

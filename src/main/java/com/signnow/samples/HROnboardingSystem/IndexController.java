@@ -135,9 +135,20 @@ public class IndexController implements ExampleInterface {
         DocumentGetRequest getRequest = new DocumentGetRequest().withDocumentId(docId);
         DocumentGetResponse doc = (DocumentGetResponse) client.send(getRequest).getResponse();
 
-        //TODO: тут повертається linkedHashMap в якому взагалі немає неймів, лише ід поля, і вони явно не в форматі Field
         Set<String> fieldNames = new HashSet<>();
-        doc.getFields().forEach(f -> fieldNames.add(((Field)f).getFieldName()));
+        for (Object f : doc.getFields()) {
+            if (f instanceof Field) {
+                fieldNames.add(((Field) f).getFieldName());
+            } else if (f instanceof Map) {
+                Object jsonAttributes = ((Map<?, ?>) f).get("json_attributes");
+                if (jsonAttributes instanceof Map) {
+                    Object name = ((Map<?, ?>) jsonAttributes).get("name");
+                    if (name instanceof String) {
+                        fieldNames.add((String) name);
+                    }
+                }
+            }
+        }
 
         FieldCollection fields = new FieldCollection();
         values.forEach((name, value) -> {
