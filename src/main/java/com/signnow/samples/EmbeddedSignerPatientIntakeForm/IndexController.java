@@ -43,7 +43,7 @@ public class IndexController implements ExampleInterface {
         }
 
         try {
-            String templateId = "2e8ab2b6590645c1934ca539b4756c8974142bf6";
+            String templateId = "2450f8a154f5450a93ea48ef795f6b679b92af1d";
             String signerEmail = "first@signnow.com";
             String signerRole = "Recipient 1";
             String signerFirstName = "FirstName";
@@ -104,13 +104,13 @@ public class IndexController implements ExampleInterface {
 
         com.signnow.api.document.request.DocumentDownloadGetRequest request = new DocumentDownloadGetRequest().withDocumentId(documentId);
         com.signnow.api.document.response.DocumentDownloadGetResponse response = (com.signnow.api.document.response.DocumentDownloadGetResponse) client.send(request).getResponse();
-        /*File file = (File) response.getFile();
-        byte[] fileBytes = FileCopyUtils.copyToByteArray(new FileInputStream(file));*/
+        File file = response.getFile();
+        byte[] fileBytes = FileCopyUtils.copyToByteArray(new FileInputStream(file));
 
         return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=completed_document.pdf")
-                .contentType(MediaType.TEXT_PLAIN/*MediaType.APPLICATION_PDF*/)
-                .body("test"/*new String(fileBytes)*/);
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(new String(fileBytes));
     }
 
     private String getSignerUniqueRoleId(ApiClient client, String documentId, String roleName) throws SignNowApiException {
