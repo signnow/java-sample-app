@@ -2,7 +2,7 @@
 
 ## Use Case Overview
 
-This sample demonstrates how to use the SignNow PHP SDK to implement an **Embedded Signing** flow involving multiple users and documents. It represents a typical HR onboarding scenario, where new employees need to sign several documents in a specific order.
+This sample demonstrates how to use the SignNow Java SDK to implement an **Embedded Signing** flow involving multiple users and documents. It represents a typical HR onboarding scenario, where new employees need to sign several documents in a specific order.
 
 ## Scenario: Employee Onboarding with Embedded Invite
 
@@ -36,7 +36,7 @@ This sample demonstrates how to use the SignNow PHP SDK to implement an **Embedd
         - _default (no action or download)_
             - Calls `downloadDocumentGroup()` to return merged, signed PDF file
 
-## Sequence of PHP Function Calls
+## Sequence of Java Function Calls
 
 1. **handleGet()** — renders the form on page load
 2. **handlePost()** — routes based on user interaction:

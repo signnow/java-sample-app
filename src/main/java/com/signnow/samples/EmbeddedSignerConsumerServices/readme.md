@@ -3,7 +3,7 @@
 
 ## Use Case Overview
 
-This sample demonstrates how to use the SignNow PHP SDK to implement an **Embedded Signer** workflow for a veterinary clinic. In this flow, the user completes and signs a pre-defined "Veterinary Clinic Intake Form" within the application and is then redirected to a confirmation screen where they can download the completed document.
+This sample demonstrates how to use the SignNow Java SDK to implement an **Embedded Signer** workflow for a veterinary clinic. In this flow, the user completes and signs a pre-defined "Veterinary Clinic Intake Form" within the application and is then redirected to a confirmation screen where they can download the completed document.
 
 This specific example mimics a real-world scenario in the veterinary services sector where an intake form must be completed and signed digitally.
 

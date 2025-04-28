@@ -2,7 +2,7 @@
 
 ## Use Case Overview
 
-This sample demonstrates how to use the SignNow PHP SDK to implement an **Embedded Signer With Form** workflow. In this flow, the user first fills out a form in the app (e.g., name and email), then is redirected into an embedded signing session. After signing, the user lands on a confirmation page where they can download the completed document.
+This sample demonstrates how to use the SignNow Java SDK to implement an **Embedded Signer With Form** workflow. In this flow, the user first fills out a form in the app (e.g., name and email), then is redirected into an embedded signing session. After signing, the user lands on a confirmation page where they can download the completed document.
 
 This example mimics a real-world healthcare scenario in which a **Medical Insurance Claim Form** must be pre-filled, signed, and downloaded.
 ## Scenario: Embedded Signer With Form
@@ -47,7 +47,7 @@ This example mimics a real-world healthcare scenario in which a **Medical Insura
 - The template ID used in this demo: `518933bacd634b82883cb232ff295ff45a8e5217`
 - The template is a "Medical Insurance Claim Form".
 - The signer's email is pulled from config: `config('signnow.api.signer_email')`
-- All API operations are performed using the official SignNow PHP SDK and `.env` credentials.
+- All API operations are performed using the official SignNow Java SDK and `.env` credentials.
 
 ## Disclaimer
 This sample application is for **demonstration purposes only**. The application uses a static template hosted in our demo SignNow account. This flow should be adapted and properly secured before being used in production.

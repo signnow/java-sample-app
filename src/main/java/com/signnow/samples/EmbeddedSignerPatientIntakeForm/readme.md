@@ -2,7 +2,7 @@
 
 ## Use Case Overview
 
-This sample demonstrates how to use the SignNow PHP SDK to implement an **Embedded Signer** workflow. In this flow, the user signs a predefined document within your application. Then, the user is redirected to a confirmation screen where they can download the completed document.
+This sample demonstrates how to use the SignNow Java SDK to implement an **Embedded Signer** workflow. In this flow, the user signs a predefined document within your application. Then, the user is redirected to a confirmation screen where they can download the completed document.
 
 This example mimics a real-world healthcare scenario in which a **Patient Intake Form** must be completed and signed digitally.
 
