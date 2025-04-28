@@ -22,6 +22,10 @@
 </head>
 
 <body>
+<div class="header">
+    <img src="/img/sign-now.png" alt="Logo">
+</div>
+
 <div id="form-container" style="display: none;">
     <div>
         <h4>HR Onboarding System</h4>
@@ -40,18 +44,11 @@
             </div>
             <div class="divider sn-input-group mt-1 mb-3"></div>
             <button type="submit" class="button-primary" id="continueButton">Continue</button>
+            <button class="btn btn-dark d-none" id="loadingButton" type="submit" disabled>
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Loading...
+            </button>
         </form>
-        <div class="copyright mt-3">Copyright (c) 2025 airSlate, Inc., SignNow API Sample Application v3.0</div>
-    </div>
-</div>
-
-<div id="thank-you-container" style="display: none;">
-    <img src="/img/sign-now.png" alt="signNow" />
-    <div class="thank-you-message">
-        <img src="/img/doc-completed.png" alt="signNow" class="mb-3" />
-        <h4>Your Document Was Sent</h4>
-        <p class="mb-4">You have successfully sent a document for signing. Once your document has been signed, you will receive a notification.</p>
-        <button type="button" class="button-secondary">Finish Demo</button>
     </div>
 </div>
 
@@ -81,21 +78,21 @@
     <h1>Select a Document</h1>
     <ul class="document-list">
         <li class="document-item" data-id="455fa8938ddb41d8a73b5cea5edd7bda333c0b0a">
-            <img src="/img/doc-preview.png" alt="Document 1" class="document-image">
+            <img src="/img/doc-preview.png" alt="I9 From" class="document-image">
             <div class="document-details">
-                <h3 class="document-title">I-9 From</h3>
+                <h3 class="document-title">I9 From</h3>
                 <p class="document-date gray--700">Nov 07, 2017 at 9:00pm</p>
             </div>
         </li>
         <li class="document-item" data-id="4ef47aa346a44327b15cdd11c8c37d57e520b6fd">
-            <img src="/img/doc-preview.png" alt="Document 2" class="document-image">
+            <img src="/img/doc-preview.png" alt="NDA" class="document-image">
             <div class="document-details">
-                <h3 class="document-title">Employee NDA</h3>
+                <h3 class="document-title">NDA</h3>
                 <p class="document-date gray--700">Nov 07, 2017 at 9:00pm</p>
             </div>
         </li>
         <li class="document-item" data-id="4d993318708e47938d170af06107b1d00d3fc6e5">
-            <img src="/img/doc-preview.png" alt="Document 3" class="document-image">
+            <img src="/img/doc-preview.png" alt="Employee Contract" class="document-image">
             <div class="document-details">
                 <h3 class="document-title">Employee Contract</h3>
                 <p class="document-date gray--700">Nov 07, 2017 at 9:00pm</p>
@@ -103,11 +100,14 @@
         </li>
     </ul>
     <button type="submit" class="button-primary" id="continue-btn-documents-selected">Continue</button>
-    <button class="btn btn-dark d-none" id="loadingButton" type="submit" disabled>
+    <button class="btn btn-dark d-none" id="loading-btn-documents-selected" type="submit" disabled>
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
         Loading...
     </button>
 </div>
+
+
+<div class="copyright gray--700 mt-3">Copyright (c) 2025 airSlate, Inc., SignNow API Sample Application v3.0</div>
 
 
 <script>
@@ -155,48 +155,19 @@
         await handlePages({
             'form-container': async (el) => {
                 const form = document.getElementById('contact-form');
+
                 form.addEventListener('submit', (event) => {
                     event.preventDefault();
                     document.getElementById('loadingButton').classList.remove('d-none');
                     document.getElementById('continueButton').classList.add('d-none');
 
-                    const employee_name = document.getElementById('employee_name').value;
-                    const employee_email = document.getElementById('employee_email').value;
-                    const hr_manager_email = document.getElementById('hr_manager_email').value;
+                    const employee_name = encodeURIComponent(document.getElementById('employee_name').value);
+                    const employee_email = encodeURIComponent(document.getElementById('employee_email').value);
+                    const hr_manager_email = encodeURIComponent(document.getElementById('hr_manager_email').value);
 
                     window.location.href = `/samples/HROnboardingSystem?page=document-selector&employee_name=${employee_name}&employee_email=${employee_email}&hr_manager_email=${hr_manager_email}`;
                 });
             },
-            'download-container': async (el) => {
-                const downloadButton = el.querySelector('.button-secondary');
-                downloadButton.addEventListener('click', async () => {
-                    try {
-                        const response = await fetch('/api/samples/HROnboardingSystem', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                document_group_id: new URLSearchParams(window.location.search).get('document_group_id'),
-                            })
-                        });
-
-                        if (!response.ok) throw new Error('Ошибка при получении файла');
-
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'document.pdf';
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                        window.URL.revokeObjectURL(url);
-                    } catch (error) {
-                        console.error('Error downloading document:', error);
-                        alert('Error downloading document');
-                    }
-                });
-            },
-
             'document-selector': async (el) => {
                 const documentItems = el.querySelectorAll('.document-item');
                 const continueButton = document.getElementById('continue-btn-documents-selected');
@@ -212,6 +183,10 @@
                 });
 
                 continueButton.addEventListener('click', async () => {
+
+                    document.getElementById('loading-btn-documents-selected').classList.remove('d-none');
+                    document.getElementById('continue-btn-documents-selected').classList.add('d-none');
+
                     const params = new URLSearchParams(window.location.search);
                     const employee_name = params.get('employee_name');
                     const employee_email = params.get('employee_email');
@@ -225,7 +200,7 @@
                             employee_email,
                             hr_manager_email,
                             template_ids: Array.from(selectedDocumentIds),
-                            action: 'create-embedded-editor',
+                            action: 'create-embedded-invite',
                         })
                     });
 
@@ -237,28 +212,8 @@
                 });
             },
 
-            'embedded-editing-callback': async () => {
-                const document_group_id = new URLSearchParams(window.location.search).get('document_group_id');
-                const employee_email = new URLSearchParams(window.location.search).get('employee_email');
-                const hr_manager_email = new URLSearchParams(window.location.search).get('hr_manager_email');
-
-                const response = await fetch('/api/samples/HROnboardingSystem', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        employee_email: employee_email,
-                        hr_manager_email: hr_manager_email,
-                        document_group_id: document_group_id,
-                        action: 'create-embedded-invite',
-                    })
-                });
-
-                const data = await response.json();
-
-                window.location.href = data.link;
-            },
-
             'download-with-status': async () => {
+                parent.postMessage({type: "SAMPLE_APP_FINISHED"}, location.origin)
                 const documentList = document.getElementById('documentList');
 
                 let interval = setInterval(async () => {

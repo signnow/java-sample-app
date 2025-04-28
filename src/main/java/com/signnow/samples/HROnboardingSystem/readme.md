@@ -1,55 +1,50 @@
-# HR Onboarding System Sample: Embedded Signing with Document Group
+# HR Onboarding System Sample Application: Embedded Signing with a Document Group
 
 ## Use Case Overview
 
-This sample demonstrates how to use the SignNow PHP SDK to implement an **Embedded Signing** flow involving multiple users and multiple documents. It mimics a real-world HR onboarding process in which new employees must complete and sign several HR documents.
+This sample demonstrates how to use the SignNow PHP SDK to implement an **Embedded Signing** flow involving multiple users and documents. It represents a typical HR onboarding scenario, where new employees need to sign several documents in a specific order.
 
-## Scenario: Multi-Document, Multi-Recipient Embedded Signing
+## Scenario: Employee Onboarding with Embedded Invite
 
 ### Step-by-step:
 1. **User opens the onboarding form** — They input Employee Name, Employee Email, and HR Manager Email.
-2. **User selects one or more HR templates** — e.g., NDA, Contract, I-9 Form.
-3. **Application clones selected templates** — Each is turned into a signable document.
-4. **Fields are pre-filled** — The Name and Email fields are populated with user input.
-5. **Document Group is created** — All documents are grouped for unified processing.
-6. **Embedded editor session is created** — For Recipient 1 (HR Manager) to review and optionally edit.
-7. **Embedded signing session starts** — HR Manager signs.
-8. **Employee is invited to sign** — After HR Manager completes their part.
-9. **Signing status is polled** — The app checks if signing is complete.
-10. **Documents become available for download** — After all signatures are collected.
+2. **User selects one or more onboarding templates** — e.g., NDA, Employment Contract, I-9 Form.
+3. **Application clones selected templates** - Each template becomes a signable document.
+4. **Fields are pre-filled** — The app inserts the employee’s name and email into specific fields.
+5. **Documents are grouped** — All documents are added to a SignNow Document Group.
+6. **Embedded signing invite is created** — The signing order is set: first the HR manager, then the employee.
+7. **Signing link is generated** — The app returns a secure signing URL for the first signer (HR).
+8. **Frontend polls for status** — The app checks whether the signing is complete.
+9. **Signed document group is available for download** — Once all signers finish.
 
 ## Technical Flow
 
 1. **GET Request to `handleGet()`**
-    - Renders the onboarding HTML form.
+    - Renders the HTML form UI for entering employee and HR data.
 
 2. **POST Request to `handlePost()`**
-    - Depending on `action` parameter, it routes to one of the following:
-        - `create-embedded-editor`
-            - Calls `createEmbeddedEditorLink()`
-                - Clones each selected template via `createDocumentFromTemplate()`
-                - Pre-fills fields via `prefillFields()`
-                - Creates a document group via `createDocumentGroupFromDocuments()`
-                - Generates embedded editor link via `createDocumentGroupEmbeddedEditorLink()`
+    - Based on the `action` parameter, routes to different logic:
         - `create-embedded-invite`
-            - Calls `createEmbeddedInvite()` to create a multi-recipient invite
-            - Then `getEmbeddedInviteLink()` to generate a signing URL
+            - Calls `createDocumentGroup()`
+                - Clones templates via `createDocumentFromTemplate()`
+                - Prefills data using `prefillFields()`
+                - Creates a document group using `createDocumentGroupFromDocuments()`
+            - Calls `createEmbeddedInvite()` to assign signers and roles
+            - Calls `getEmbeddedInviteLink()` to generate a signing link for the first recipient
         - `invite-status`
-            - Calls `getDocumentGroupInviteStatus()` to check current invite status
-        - _default_
-            - Calls `downloadDocumentGroup()` to provide the signed document as a PDF download
+            - Calls `getDocumentGroupInviteStatus()` to get signing status
+        - _default (no action or download)_
+            - Calls `downloadDocumentGroup()` to return merged, signed PDF file
 
 ## Sequence of PHP Function Calls
 
-1. **handleGet()** (on page load)
-2. **handlePost()** (depending on user interaction):
-    - If `create-embedded-editor`:
-        - createEmbeddedEditorLink()
+1. **handleGet()** — renders the form on page load
+2. **handlePost()** — routes based on user interaction:
+    - If `create-embedded-invite`:
+        - createDocumentGroup()
             - createDocumentFromTemplate()
             - prefillFields()
             - createDocumentGroupFromDocuments()
-            - createDocumentGroupEmbeddedEditorLink()
-    - If `create-embedded-invite`:
         - createEmbeddedInvite()
             - getDocumentGroup()
         - getEmbeddedInviteLink()
@@ -60,9 +55,9 @@ This sample demonstrates how to use the SignNow PHP SDK to implement an **Embedd
         - downloadDocumentGroup()
 
 ## Template Info
-- This demo uses preloaded templates hosted on our **demo SignNow account**.
-- Templates must be cloned to documents before use.
-- Field and role mapping is handled programmatically.
+- Templates are pre-uploaded to our **demo SignNow account**.
+- Each must be cloned into a live document before use.
+- Field names and signer roles (e.g., "Employee", "Employer") are matched programmatically.
 
 ## Disclaimer
-This sample application is for **demonstration purposes only**. It uses static templates available in our **demo SignNow account**. Do not use this sample in production without appropriate adjustments for authentication, security, and dynamic document management.
+This sample is for **demonstration purposes only** and relies on static templates stored in a **demo SignNow account**. It is not intended for production use without adjustments for authentication, document management, error handling, and security.

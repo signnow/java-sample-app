@@ -1,4 +1,4 @@
-package com.signnow.samples.EmbeddedSignerPatientIntakeForm;
+package com.signnow.samples.EmbeddedSignerConsentForm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.signnow.Sdk;
@@ -35,7 +35,7 @@ public class IndexController implements ExampleInterface {
 
     @Override
     public ResponseEntity<String> serveExample() throws IOException {
-        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSignerPatientIntakeForm/templates/index.html")));
+        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSignerConsentForm/templates/index.html")));
         return ResponseEntity.ok()
                 .header("Content-Type", "text/html")
                 .body(html);
@@ -61,9 +61,9 @@ public class IndexController implements ExampleInterface {
         Sdk sdk = new Sdk();
         ApiClient client = sdk.build().authenticate().getApiClient();
 
-        String templateId = "2450f8a154f5450a93ea48ef795f6b679b92af1d";
+        String templateId = "bcf0ddaea1394b969a1ce628901097b8c547cd87";
         String signerEmail = "signer_email@example.com";
-        String redirectUrl = "http://localhost:8080/samples/EmbeddedSignerPatientIntakeForm?page=download-container";
+        String redirectUrl = "http://localhost:8080/samples/EmbeddedSignerConsentForm?page=download-container";
 
         CloneTemplatePostResponse clonedDoc = this.createDocumentFromTemplate(client, templateId);
         String documentId = clonedDoc.getId();

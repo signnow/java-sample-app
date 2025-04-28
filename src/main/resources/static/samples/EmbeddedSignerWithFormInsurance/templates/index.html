@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sample App</title>
+    <title>Embedded Signer With Form Insurance</title>
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <meta name="description" content="">
@@ -32,11 +32,11 @@
         <h4>Medical Insurance Claim Form</h4>
         <form id="contact-form" action="#" method="post">
             <div class="sn-input-group mb-3">
-                <label for="firstNameInput">Name<span class="text-danger">*</span></label>
+                <label for="full_name">Name<span class="text-danger">*</span></label>
                 <input type="text" placeholder="John Smith" id="full_name" name="full_name" required>
             </div>
             <div class="sn-input-group mb-3">
-                <label for="lastNameInput">Email</label>
+                <label for="email">Email</label>
                 <input type="email" placeholder="Enter Email" id="email" name="email">
             </div>
             <button type="submit" class="button-primary" id="continueButton">Continue</button>
@@ -60,25 +60,6 @@
 <div class="copyright gray--700 mt-3">Copyright (c) 2025 airSlate, Inc., SignNow API Sample Application v3.0</div>
 
 <script>
-    /**
-     * Handles dynamic page rendering and initialization based on the `page` query parameter in the URL.
-     *
-     * @param {Object} pagesMap - A map where each key is the ID of a container element (and page name),
-     *                            and the value is a corresponding async handler function.
-     * @param {string} [defaultKey] - (Optional) The default page key to use if the `page` parameter is missing or invalid.
-     *                                If not provided, the first key in `pagesMap` will be used as fallback.
-     *
-     * This function:
-     * - Hides all elements whose IDs match the keys in `pagesMap`.
-     * - Displays only the one corresponding to the current `page` parameter or the default.
-     * - Calls the handler function for that page.
-     *
-     * Example usage:
-     * handlePages({
-     *   'form-container': async (el) => { ... },
-     *   'download-container': async (el) => { ... },
-     * });
-     */
     async function handlePages(pagesMap, defaultKey) {
         const fallbackKey = defaultKey || Object.keys(pagesMap)[0];
         const pageParam = new URLSearchParams(window.location.search).get('page') || fallbackKey;
@@ -104,13 +85,13 @@
         const urlParams = new URLSearchParams(window.location.search);
         handlePages({
             'download-container': async (el) => {
-                parent.postMessage({type: "SAMPLE_APP_FINISHED"}, location.origin)
+                parent.postMessage({type: "SAMPLE_APP_FINISHED"}, location.origin);
 
                 const downloadButton = document.querySelector('.button-secondary');
 
                 downloadButton.addEventListener('click', async () => {
                     try {
-                        const response = await fetch('/api/samples/MedicalInsuranceClaimForm', {
+                        const response = await fetch('/api/samples/EmbeddedSignerWithFormInsurance', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -147,13 +128,13 @@
                     event.preventDefault();
 
                     document.getElementById('loadingButton').classList.remove('d-none');
-                    document.getElementById('continueButton').classList.add('d-none')
+                    document.getElementById('continueButton').classList.add('d-none');
 
                     const full_name = document.getElementById('full_name').value;
                     const email = document.getElementById('email').value;
 
                     try {
-                        const response = await fetch('/api/samples/MedicalInsuranceClaimForm', {
+                        const response = await fetch('/api/samples/EmbeddedSignerWithFormInsurance', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

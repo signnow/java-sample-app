@@ -5,6 +5,9 @@ import com.signnow.Sdk;
 import com.signnow.api.document.request.DocumentGetRequest;
 import com.signnow.api.document.response.DocumentDownloadGetResponse;
 import com.signnow.api.document.response.DocumentGetResponse;
+import com.signnow.api.document.response.data.Field;
+import com.signnow.api.documentfield.request.DocumentPrefillPutRequest;
+import com.signnow.api.documentfield.request.data.FieldCollection;
 import com.signnow.api.documentgroup.request.DocumentGroupGetRequest;
 import com.signnow.api.documentgroup.request.DocumentGroupPostRequest;
 import com.signnow.api.documentgroup.request.DownloadDocumentGroupPostRequest;
@@ -12,38 +15,30 @@ import com.signnow.api.documentgroup.request.data.DocumentIdCollection;
 import com.signnow.api.documentgroup.request.data.DocumentOrderCollection;
 import com.signnow.api.documentgroup.response.DocumentGroupGetResponse;
 import com.signnow.api.documentgroup.response.DocumentGroupPostResponse;
-import com.signnow.api.documentgroup.response.DownloadDocumentGroupPostResponse;
-import com.signnow.api.embeddededitor.request.DocumentGroupEmbeddedEditorLinkPostRequest;
-import com.signnow.api.embeddededitor.response.DocumentGroupEmbeddedEditorLinkPostResponse;
+import com.signnow.api.documentgroupinvite.request.GroupInviteGetRequest;
+import com.signnow.api.documentgroupinvite.response.GroupInviteGetResponse;
+import com.signnow.api.documentgroupinvite.response.GroupInvitePostResponse;
 import com.signnow.api.embeddedgroupinvite.request.GroupInviteLinkPostRequest;
 import com.signnow.api.embeddedgroupinvite.request.GroupInvitePostRequest;
-import com.signnow.api.embeddedgroupinvite.request.data.invite.Document;
-import com.signnow.api.embeddedgroupinvite.request.data.invite.DocumentCollection;
 import com.signnow.api.embeddedgroupinvite.request.data.invite.Invite;
 import com.signnow.api.embeddedgroupinvite.request.data.invite.InviteCollection;
 import com.signnow.api.embeddedgroupinvite.request.data.invite.Signer;
 import com.signnow.api.embeddedgroupinvite.request.data.invite.SignerCollection;
+import com.signnow.api.embeddedgroupinvite.request.data.invite.Document;
+import com.signnow.api.embeddedgroupinvite.request.data.invite.DocumentCollection;
 import com.signnow.api.embeddedgroupinvite.response.GroupInviteLinkPostResponse;
-import com.signnow.api.embeddedgroupinvite.response.GroupInvitePostResponse;
-import com.signnow.api.documentgroupinvite.request.GroupInviteGetRequest;
-import com.signnow.api.documentgroupinvite.response.GroupInviteGetResponse;
 import com.signnow.api.template.request.CloneTemplatePostRequest;
 import com.signnow.api.template.response.CloneTemplatePostResponse;
-import com.signnow.api.documentfield.request.DocumentPrefillPutRequest;
-import com.signnow.api.documentfield.request.data.Field;
-import com.signnow.api.documentfield.request.data.FieldCollection;
 import com.signnow.core.ApiClient;
 import com.signnow.core.exception.SignNowApiException;
 import com.signnow.javasampleapp.ExampleInterface;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 @Controller
@@ -51,9 +46,10 @@ public class IndexController implements ExampleInterface {
 
     @Override
     public ResponseEntity<String> serveExample() throws IOException {
-        String html = new String(Files.readAllBytes(
-                new File("src/main/resources/static/samples/HROnboardingSystem/templates/index.html").toPath()));
-        return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/HROnboardingSystem/templates/index.html")));
+        return ResponseEntity.ok()
+                .header("Content-Type", "text/html")
+                .body(html);
     }
 
     @Override
@@ -62,169 +58,127 @@ public class IndexController implements ExampleInterface {
         String action = (String) data.get("action");
 
         Sdk sdk = new Sdk();
-        ApiClient apiClient = sdk.build().authenticate().getApiClient();
+        ApiClient client = sdk.build().authenticate().getApiClient();
 
-        switch (action) {
-            case "create-embedded-editor":
-                String employeeName = (String) data.get("employee_name");
-                String employeeEmail = (String) data.get("employee_email");
-                String hrManagerEmail = (String) data.get("hr_manager_email");
-                List<String> templateIds = (List<String>) data.get("template_ids");
+        if ("create-embedded-invite".equals(action)) {
+            String employeeName = (String) data.get("employee_name");
+            String employeeEmail = (String) data.get("employee_email");
+            String hrManagerEmail = (String) data.get("hr_manager_email");
+            List<String> templateIds = (List<String>) data.get("template_ids");
 
-                String editorLink = createEmbeddedEditorLink(apiClient, templateIds, Map.of(
-                        "Name", employeeName,
-                        "Text Field 2", employeeName,
-                        "Text Field 156", employeeName,
-                        "Email", employeeEmail
-                ), employeeEmail, hrManagerEmail);
+            String documentGroupId = createDocumentGroup(client, templateIds, Map.of(
+                    "Name", employeeName,
+                    "Text Field 2", employeeName,
+                    "Text Field 156", employeeName,
+                    "Email", employeeEmail
+            ));
 
-                return ResponseEntity.ok(new ObjectMapper().writeValueAsString(Map.of("link", editorLink)));
+            String contractPreparerEmail = "contract_preparer@example.com";
+            GroupInvitePostResponse embeddedInviteResponse = createEmbeddedInvite(client, documentGroupId, employeeEmail, hrManagerEmail, contractPreparerEmail);
+            String inviteLink = getEmbeddedInviteLink(client, documentGroupId, embeddedInviteResponse.getId(), contractPreparerEmail);
 
-            case "create-embedded-invite":
-                String groupId = (String) data.get("document_group_id");
-                employeeEmail = (String) data.get("employee_email");
-                hrManagerEmail = (String) data.get("hr_manager_email");
-
-                GroupInvitePostResponse inviteResponse = createEmbeddedInvite(apiClient, groupId, employeeEmail, hrManagerEmail);
-                String inviteLink = getEmbeddedInviteLink(apiClient, groupId, inviteResponse.getData().getId(), employeeEmail);
-
-                return ResponseEntity.ok(new ObjectMapper().writeValueAsString(Map.of("link", inviteLink)));
-
-            case "invite-status":
-                groupId = (String) data.get("document_group_id");
-                String status = getDocumentGroupInviteStatus(apiClient, groupId);
-                return ResponseEntity.ok(new ObjectMapper().writeValueAsString(Map.of("status", status)));
-
-            default:
-                groupId = (String) data.get("document_group_id");
-                byte[] pdf = downloadDocumentGroup(apiClient, groupId);
-                return ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=result.pdf")
-                        .contentType(MediaType.APPLICATION_PDF)
-                        .body(Base64.getEncoder().encodeToString(pdf));
+            return ResponseEntity.ok("{\"link\":\"" + inviteLink + "\"}");
+        } else if ("invite-status".equals(action)) {
+            String documentGroupId = (String) data.get("document_group_id");
+            String status = getDocumentGroupInviteStatus(client, documentGroupId);
+            return ResponseEntity.ok("{\"status\":\"" + status + "\"}");
+        } else {
+            String documentGroupId = (String) data.get("document_group_id");
+            byte[] file = downloadDocumentGroup(client, documentGroupId);
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/pdf")
+                    .header("Content-Disposition", "attachment; filename=\"result.pdf\"")
+                    .body(new String(file));
         }
     }
 
-    private String createEmbeddedEditorLink(ApiClient apiClient, List<String> templateIds, Map<String, String> fields, String employeeEmail, String hrManagerEmail) throws SignNowApiException {
-        List<CloneTemplatePostResponse> docs = new ArrayList<>();
+    private String createDocumentGroup(ApiClient client, List<String> templateIds, Map<String, String> fields) throws SignNowApiException {
+        var clonedIds = new DocumentIdCollection();
         for (String templateId : templateIds) {
-            CloneTemplatePostRequest cloneRequest = new CloneTemplatePostRequest().withTemplateId(templateId);
-            docs.add((CloneTemplatePostResponse) apiClient.send(cloneRequest).getResponse());
+            CloneTemplatePostResponse doc = cloneTemplate(client, templateId);
+            clonedIds.add(doc.getId());
+            prefillFields(client, doc.getId(), fields);
         }
 
-        for (CloneTemplatePostResponse doc : docs) {
-            prefillFields(apiClient, doc.getId(), fields);
-        }
-
-        DocumentIdCollection docIds = new DocumentIdCollection();
-        for (CloneTemplatePostResponse doc : docs) docIds.add(doc.getId());
-
-        DocumentGroupPostRequest groupPost = new DocumentGroupPostRequest(docIds, "HR Onboarding System");
-        DocumentGroupPostResponse groupResp = (DocumentGroupPostResponse) apiClient.send(groupPost).getResponse();
-
-        String redirectUrl = "http://localhost:8080/samples/HROnboardingSystem?page=embedded-editing-callback&document_group_id=" + groupResp.getId() + "&employee_email=" + employeeEmail + "&hr_manager_email=" + hrManagerEmail;
-
-        DocumentGroupEmbeddedEditorLinkPostRequest editorLinkReq = new DocumentGroupEmbeddedEditorLinkPostRequest(redirectUrl, "self", 15)
-                .withDocumentGroupId(groupResp.getId());
-        DocumentGroupEmbeddedEditorLinkPostResponse linkResp = (DocumentGroupEmbeddedEditorLinkPostResponse) apiClient.send(editorLinkReq).getResponse();
-
-        return linkResp.getData().getUrl();
+        DocumentGroupPostRequest request = new DocumentGroupPostRequest(clonedIds, "HR Onboarding System");
+        DocumentGroupPostResponse response = (DocumentGroupPostResponse) client.send(request).getResponse();
+        return response.getId();
     }
 
-    private void prefillFields(ApiClient client, String docId, Map<String, String> values) throws SignNowApiException {
-        DocumentGetRequest getRequest = new DocumentGetRequest().withDocumentId(docId);
-        DocumentGetResponse doc = (DocumentGetResponse) client.send(getRequest).getResponse();
+    private CloneTemplatePostResponse cloneTemplate(ApiClient client, String templateId) throws SignNowApiException {
+        CloneTemplatePostRequest request = new CloneTemplatePostRequest();
+        request.withTemplateId(templateId);
+        return (CloneTemplatePostResponse) client.send(request).getResponse();
+    }
+
+    private void prefillFields(ApiClient client, String documentId, Map<String, String> fieldsValues) throws SignNowApiException {
+        DocumentGetRequest request = new DocumentGetRequest().withDocumentId(documentId);
+        DocumentGetResponse response = (DocumentGetResponse) client.send(request).getResponse();
 
         Set<String> fieldNames = new HashSet<>();
-        for (Object f : doc.getFields()) {
-            if (f instanceof Field) {
-                fieldNames.add(((Field) f).getFieldName());
-            } else if (f instanceof Map) {
-                Object jsonAttributes = ((Map<?, ?>) f).get("json_attributes");
-                if (jsonAttributes instanceof Map) {
-                    Object name = ((Map<?, ?>) jsonAttributes).get("name");
-                    if (name instanceof String) {
-                        fieldNames.add((String) name);
-                    }
-                }
+        for (Object f : response.getFields()) {
+            Object jsonAttributes = ((Map<?, ?>) f).get("json_attributes");
+            Object name = ((Map<?, ?>) jsonAttributes).get("name");
+            fieldNames.add((String) name);
+        }
+
+        FieldCollection prefilledFields = new FieldCollection();
+        for (var entry : fieldsValues.entrySet()) {
+            if (fieldNames.contains(entry.getKey())) {
+                prefilledFields.add(new com.signnow.api.documentfield.request.data.Field(entry.getKey(), entry.getValue()));
             }
         }
 
-        FieldCollection fields = new FieldCollection();
-        values.forEach((name, value) -> {
-            if (value != null && fieldNames.contains(name)) {
-                fields.add(new Field(name, value));
-            }
-        });
-
-        if (!fields.isEmpty()) {
-            DocumentPrefillPutRequest prefill = new DocumentPrefillPutRequest(fields).withDocumentId(docId);
-            client.send(prefill);
+        if (!prefilledFields.isEmpty()) {
+            DocumentPrefillPutRequest prefillRequest = new DocumentPrefillPutRequest(prefilledFields).withDocumentId(documentId);
+            client.send(prefillRequest);
         }
     }
 
-    private GroupInvitePostResponse createEmbeddedInvite(ApiClient client, String groupId, String employeeEmail, String hrManagerEmail) throws SignNowApiException {
-        DocumentGroupGetRequest groupGet = new DocumentGroupGetRequest().withDocumentGroupId(groupId);
-        DocumentGroupGetResponse group = (DocumentGroupGetResponse) client.send(groupGet).getResponse();
+    private GroupInvitePostResponse createEmbeddedInvite(ApiClient client, String documentGroupId, String employeeEmail, String hrManagerEmail, String contractPreparerEmail) throws SignNowApiException {
+        var invites = new InviteCollection();
 
-        Map<String, String> roleEmailMap = new LinkedHashMap<>();
-        List<String> emails = List.of(employeeEmail, hrManagerEmail);
+        var signers_contractPreparer = new SignerCollection();
+        signers_contractPreparer.add(new Signer(contractPreparerEmail, "none", new DocumentCollection(), "http://localhost","self"));
+        invites.add(new Invite(1, signers_contractPreparer));
 
-        Map<String, List<Document>> signerDocs = new LinkedHashMap<>();
-        int emailIdx = 0;
+        var signers_hrManager = new SignerCollection();
+        signers_hrManager.add(new Signer(hrManagerEmail, "none", new DocumentCollection(), "http://localhost","self"));
+        invites.add(new Invite(2, signers_hrManager));
 
-        for (var doc : group.getDocuments()) {
-            for (String role : doc.getRoles()) {
-                roleEmailMap.putIfAbsent(role, emails.get(Math.min(emailIdx++, emails.size() - 1)));
-                String email = roleEmailMap.get(role);
-                signerDocs.computeIfAbsent(email, k -> new ArrayList<>()).add(new Document(doc.getId(), "sign", role));
-            }
-        }
+        var signers_employee = new SignerCollection();
+        signers_employee.add(new Signer(employeeEmail, "none", new DocumentCollection(), "http://localhost","self"));
+        invites.add(new Invite(3, signers_employee));
 
-        String redirectUrl = "http://localhost:8080/samples/HROnboardingSystem?page=download-with-status&document_group_id=" + groupId;
-        InviteCollection invites = new InviteCollection();
+        GroupInvitePostRequest request = new GroupInvitePostRequest(invites, true).withDocumentGroupId(documentGroupId);
 
-        int order = 1;
-        for (String email : emails) {
-            if (!signerDocs.containsKey(email)) continue;
-            DocumentCollection docCollection = new DocumentCollection();
-            docCollection.addAll(signerDocs.get(email));
-            Signer signer = new Signer(email, "none", docCollection, redirectUrl, "self");
-
-            SignerCollection signCollection = new SignerCollection();
-            signCollection.add(signer);
-            invites.add(new Invite(order++, signCollection));
-        }
-
-        GroupInvitePostRequest request = new GroupInvitePostRequest(invites, false).withDocumentGroupId(groupId);
         return (GroupInvitePostResponse) client.send(request).getResponse();
     }
 
-    private String getEmbeddedInviteLink(ApiClient client, String groupId, String inviteId, String email) throws SignNowApiException {
+    private String getEmbeddedInviteLink(ApiClient client, String documentGroupId, String inviteId, String email) throws SignNowApiException {
         GroupInviteLinkPostRequest linkReq = new GroupInviteLinkPostRequest(email, "none", 15)
-                .withDocumentGroupId(groupId).withEmbeddedInviteId(inviteId);
+                .withDocumentGroupId(documentGroupId).withEmbeddedInviteId(inviteId);
         GroupInviteLinkPostResponse resp = (GroupInviteLinkPostResponse) client.send(linkReq).getResponse();
         return resp.getData().getLink();
     }
 
-    private String getDocumentGroupInviteStatus(ApiClient client, String groupId) throws SignNowApiException {
-        DocumentGroupGetRequest groupGet = new DocumentGroupGetRequest().withDocumentGroupId(groupId);
+    private String getDocumentGroupInviteStatus(ApiClient client, String documentGroupId) throws SignNowApiException {
+        DocumentGroupGetRequest groupGet = new DocumentGroupGetRequest().withDocumentGroupId(documentGroupId);
         DocumentGroupGetResponse group = (DocumentGroupGetResponse) client.send(groupGet).getResponse();
-        GroupInviteGetRequest inviteGet = new GroupInviteGetRequest().withDocumentGroupId(groupId).withInviteId(group.getInviteId());
+        GroupInviteGetRequest inviteGet = new GroupInviteGetRequest().withDocumentGroupId(documentGroupId).withInviteId(group.getInviteId());
         GroupInviteGetResponse resp = (GroupInviteGetResponse) client.send(inviteGet).getResponse();
         return resp.getInvite().getStatus();
     }
 
-    private byte[] downloadDocumentGroup(ApiClient client, String groupId) throws SignNowApiException, IOException {
+    private byte[] downloadDocumentGroup(ApiClient client, String documentGroupId) throws IOException, SignNowApiException {
         DocumentOrderCollection orders = new DocumentOrderCollection();
         orders.add("1");
         DownloadDocumentGroupPostRequest request = new DownloadDocumentGroupPostRequest("merged", "no", orders)
-                .withDocumentGroupId(groupId);
+                .withDocumentGroupId(documentGroupId);
         DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(request).getResponse();
-        //File file = (File) response.getFile();
-        byte[] content = null;//Files.readAllBytes(file.toPath());
-        //file.delete();
+        File file = response.getFile();
+        byte[] content = Files.readAllBytes(file.toPath());
+        file.delete();
         return content;
     }
-
 }

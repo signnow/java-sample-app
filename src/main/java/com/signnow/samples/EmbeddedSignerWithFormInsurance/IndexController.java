@@ -1,4 +1,4 @@
-package com.signnow.samples.MedicalInsuranceClaimForm;
+package com.signnow.samples.EmbeddedSignerWithFormInsurance;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.signnow.Sdk;
@@ -17,6 +17,8 @@ import com.signnow.api.embeddedinvite.request.data.Invite;
 import com.signnow.api.embeddedinvite.request.data.InviteCollection;
 import com.signnow.api.embeddedinvite.response.DocumentInviteLinkPostResponse;
 import com.signnow.api.embeddedinvite.response.DocumentInvitePostResponse;
+import com.signnow.api.embeddedinvite.response.data.DataInvite;
+import com.signnow.api.embeddedinvite.response.data.DataInviteCollection;
 import com.signnow.api.template.request.CloneTemplatePostRequest;
 import com.signnow.api.template.response.CloneTemplatePostResponse;
 import com.signnow.core.ApiClient;
@@ -36,7 +38,7 @@ public class IndexController implements ExampleInterface {
 
     @Override
     public ResponseEntity<String> serveExample() throws IOException {
-        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/MedicalInsuranceClaimForm/templates/index.html")));
+        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSignerWithFormInsurance/templates/index.html")));
         return ResponseEntity.ok()
                 .header("Content-Type", "text/html")
                 .body(html);
@@ -53,8 +55,8 @@ public class IndexController implements ExampleInterface {
         if ("create-embedded-invite".equals(action)) {
             String fullName = data.get("full_name");
             String email = data.get("email");
-            String link = createEmbeddedInviteAndReturnSigningLink(client, "518933bacd634b82883cb232ff295ff45a8e5217", fullName, email);
-            return ResponseEntity.ok("{\"link\":\"" + link + "\"}");
+            String link = createEmbeddedInviteAndReturnSigningLink(client, "c78e902aa6834af6ba92e8a6f92b603108e1bbbb", fullName, email);
+            return ResponseEntity.ok("{" + "\"link\":\"" + link + "\"}");
         } else {
             String documentId = data.get("document_id");
             byte[] file = downloadDocument(client, documentId);
@@ -102,18 +104,18 @@ public class IndexController implements ExampleInterface {
         client.send(request);
     }
 
-    private String getSignerUniqueRoleId(ApiClient client, String documentId, String signerRole) throws SignNowApiException {
+    private String getSignerUniqueRoleId(ApiClient client, String documentId, String roleName) throws SignNowApiException {
         DocumentGetRequest request = new DocumentGetRequest();
         request.withDocumentId(documentId);
         DocumentGetResponse response = (DocumentGetResponse) client.send(request).getResponse();
 
         RoleCollection roles = response.getRoles();
         for (Role role : roles) {
-            if (role.getName().equals(signerRole)) {
+            if (role.getName().equals(roleName)) {
                 return role.getUniqueId();
             }
         }
-        throw new IllegalArgumentException("Role not found: " + signerRole);
+        throw new IllegalArgumentException("Role not found: " + roleName);
     }
 
     private DocumentInvitePostResponse createEmbeddedInviteForOneSigner(ApiClient client, String documentId, String email, String roleId) throws SignNowApiException {
@@ -126,11 +128,13 @@ public class IndexController implements ExampleInterface {
     }
 
     private String findInviteId(DocumentInvitePostResponse inviteResponse, String email) {
-        return inviteResponse.getData().stream()
-                .filter(invite -> invite.getEmail().equalsIgnoreCase(email))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Invite not found for email: " + email))
-                .getId();
+        DataInviteCollection invites = inviteResponse.getData();
+        for (DataInvite invite : invites) {
+            if (invite.getEmail().equalsIgnoreCase(email)) {
+                return invite.getId();
+            }
+        }
+        throw new IllegalArgumentException("Invite for email not found: " + email);
     }
 
     private String getEmbeddedInviteLink(ApiClient client, String documentId, String inviteId) throws SignNowApiException {
@@ -139,7 +143,7 @@ public class IndexController implements ExampleInterface {
         request.withFieldInviteId(inviteId);
 
         DocumentInviteLinkPostResponse response = (DocumentInviteLinkPostResponse) client.send(request).getResponse();
-        String redirectUrl = "http://localhost:8080/samples/MedicalInsuranceClaimForm?page=download-container&document_id=" + documentId;
+        String redirectUrl = "http://localhost:8080/samples/EmbeddedSignerWithFormInsurance?page=download-container&document_id=" + documentId;
         return response.getData().getLink() + "&redirect_uri=" + redirectUrl;
     }
 }
