@@ -442,3 +442,8 @@ button {
 .loader__icon {
     color: #0777CF;
 }
+
+#download-container {
+  text-align: center;
+  padding-top: 50px;
+}
