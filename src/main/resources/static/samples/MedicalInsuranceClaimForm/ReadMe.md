@@ -2,14 +2,10 @@ package com.signnow.samples.MedicalInsuranceClaimForm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.signnow.Sdk;
-import com.signnow.api.document.request.DocumentDownloadGetRequest;
 import com.signnow.api.document.request.DocumentGetRequest;
-import com.signnow.api.document.response.DocumentDownloadGetResponse;
 import com.signnow.api.document.response.DocumentGetResponse;
 import com.signnow.api.document.response.data.Role;
 import com.signnow.api.document.response.data.RoleCollection;
-import com.signnow.api.documentfield.request.DocumentPrefillPutRequest;
-import com.signnow.api.documentfield.request.data.FieldCollection;
 import com.signnow.api.embeddedinvite.request.DocumentInviteLinkPostRequest;
 import com.signnow.api.embeddedinvite.request.DocumentInvitePostRequest;
 import com.signnow.api.embeddedinvite.request.data.Invite;
@@ -144,16 +140,16 @@ public class IndexController implements ExampleInterface {
     }
 
     private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException {
-        DocumentDownloadGetRequest downloadDoc = new DocumentDownloadGetRequest();
+        com.signnow.api.document.request.DocumentDownloadGetRequest downloadDoc = new com.signnow.api.document.request.DocumentDownloadGetRequest();
         downloadDoc.withDocumentId(documentId);
 
-        DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadDoc).getResponse();
-        return new byte[0];
-//        return response.getFile().getBytes();
+        com.signnow.api.document.response.DocumentDownloadGetResponse response = (com.signnow.api.document.response.DocumentDownloadGetResponse) client.send(downloadDoc).getResponse();
+
+        return response.getFile().getBytes();
     }
 
     private void prefillFields(ApiClient client, String documentId, Map<String, String> fieldsValue) throws SignNowApiException {
-        FieldCollection fields = new FieldCollection();
+        com.signnow.api.documentfield.request.data.FieldCollection fields = new com.signnow.api.documentfield.request.data.FieldCollection();
 
         fieldsValue.forEach((fieldName, fieldValue) -> {
             if (fieldValue != null) {
@@ -161,7 +157,7 @@ public class IndexController implements ExampleInterface {
             }
         });
 
-        DocumentPrefillPutRequest patchFields = new DocumentPrefillPutRequest(fields);
+        com.signnow.api.documentfield.request.DocumentPrefillPut patchFields = new com.signnow.api.documentfield.request.DocumentPrefillPut(fields);
         patchFields.withDocumentId(documentId);
         client.send(patchFields);
     }
