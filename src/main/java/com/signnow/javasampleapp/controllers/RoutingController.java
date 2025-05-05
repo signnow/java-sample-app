@@ -16,12 +16,19 @@ import java.util.Map;
 public class RoutingController {
 
     @GetMapping("/")
-    public String root() {
-        return "redirect:/samples/HROnboardingSystem"; // Default redirect
+    public ResponseEntity<String> root() throws IOException {
+        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/error.html")));
+
+        return ResponseEntity.status(404)
+                .header("Content-Type", "text/html")
+                .body(html);
     }
 
     @GetMapping("/samples/{exampleName}")
-    public ResponseEntity<String> routeExample(@PathVariable String exampleName) throws IOException {
+    public ResponseEntity<String> routeExample(
+            @PathVariable String exampleName,
+            @RequestParam Map<String, String> queryParams
+    ) throws IOException {
         if (!exampleName.matches("^[a-zA-Z0-9_]+$")) {
             String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/error.html")));
             return ResponseEntity.status(404)
@@ -33,7 +40,7 @@ public class RoutingController {
             Class<?> controllerClass = Class.forName(controllerPath);
             Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
             if (controllerInstance instanceof ExampleInterface) {
-                return ((ExampleInterface) controllerInstance).serveExample();
+                return ((ExampleInterface) controllerInstance).handleGet(queryParams);
             }
         } catch (Exception e) {
             // Log the error
@@ -60,7 +67,7 @@ public class RoutingController {
             Class<?> controllerClass = Class.forName(controllerPath);
             Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
             if (controllerInstance instanceof ExampleInterface) {
-                return ((ExampleInterface) controllerInstance).handleSubmission(formData);
+                return ((ExampleInterface) controllerInstance).handlePost(formData);
             }
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();

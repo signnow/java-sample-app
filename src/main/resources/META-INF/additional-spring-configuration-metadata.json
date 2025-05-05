@@ -1,0 +1,8 @@
+{
+  "properties": [
+    {
+      "name": "signnow.api.signer_email",
+      "type": "java.lang.String",
+      "description": "Description for signnow.api.signer_email."
+  }
+] }

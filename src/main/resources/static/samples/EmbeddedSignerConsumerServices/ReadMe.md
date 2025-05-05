@@ -21,21 +21,22 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Map;
 
 @Controller
 public class IndexController implements ExampleInterface {
 
     @Override
-    public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException, SignNowApiException, UnsupportedEncodingException {
-        String page = queryParams.get("page");
+    public ResponseEntity<String> serveExample() throws IOException {
+        String page = "index"; // Assume this is retrieved from the request
         if ("finish".equals(page)) {
-            String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSignerConsumerServices/index.html")));
-            return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+            // Return the finish page
+            String html = "<html><body>Document signed! <a href=\"/download\">Download</a></body></html>";
+            return ResponseEntity.ok()
+                    .header("Content-Type", "text/html")
+                    .body(html);
         } else {
+            // Initiate signing flow
             String templateId = "da62bd76f1864e1fadff6251eca8152977ee3486";
             String link = createEmbeddedInviteAndReturnSigningLink(templateId);
             return ResponseEntity.status(302)
@@ -45,11 +46,12 @@ public class IndexController implements ExampleInterface {
     }
 
     @Override
-    public ResponseEntity<String> handlePost(String formData) throws IOException, SignNowApiException {
+    public ResponseEntity<String> handleSubmission(String formData) throws IOException, SignNowApiException {
         Map<String, String> data = new ObjectMapper().readValue(formData, Map.class);
         String documentId = data.get("document_id");
 
-        ApiClient client = new Sdk().build().authenticate().getApiClient();
+        Sdk sdk = new Sdk();
+        ApiClient client = sdk.build().authenticate().getApiClient();
 
         byte[] file = downloadDocument(client, documentId);
 
@@ -59,8 +61,9 @@ public class IndexController implements ExampleInterface {
                 .body(new String(file));
     }
 
-    private String createEmbeddedInviteAndReturnSigningLink(String templateId) throws SignNowApiException, UnsupportedEncodingException {
-        ApiClient client = new Sdk().build().authenticate().getApiClient();
+    private String createEmbeddedInviteAndReturnSigningLink(String templateId) throws SignNowApiException {
+        Sdk sdk = new Sdk();
+        ApiClient client = sdk.build().authenticate().getApiClient();
 
         CloneTemplatePostResponse cloneTemplateResponse = createDocumentFromTemplate(client, templateId);
 
@@ -79,7 +82,7 @@ public class IndexController implements ExampleInterface {
         return (CloneTemplatePostResponse) client.send(cloneTemplate).getResponse();
     }
 
-    private String getEmbeddedInviteLink(ApiClient client, String documentId, String inviteId) throws SignNowApiException, UnsupportedEncodingException {
+    private String getEmbeddedInviteLink(ApiClient client, String documentId, String inviteId) throws SignNowApiException {
         DocumentInviteLinkPostRequest embeddedInvite = new DocumentInviteLinkPostRequest("none", 15);
         embeddedInvite.withFieldInviteId(inviteId);
         embeddedInvite.withDocumentId(documentId);
@@ -93,18 +96,9 @@ public class IndexController implements ExampleInterface {
 
     private DocumentInvitePostResponse createEmbeddedInviteForOneSigner(ApiClient client, String documentId, String signerEmail, String roleId) throws SignNowApiException {
         InviteCollection invites = new InviteCollection();
-        invites.add(new Invite(
-                signerEmail, // email
-                roleId, // roleId
-                1, // order
-                null, // firstName
-                null // lastName
-        ));
+        invites.add(new Invite(signerEmail, roleId, 1, "none"));
 
-        DocumentInvitePostRequest documentInvite = new DocumentInvitePostRequest(
-                invites, // invites
-                null // nameFormula
-        );
+        DocumentInvitePostRequest documentInvite = new DocumentInvitePostRequest(invites, null);
         documentInvite.withDocumentId(documentId);
 
         return (DocumentInvitePostResponse) client.send(documentInvite).getResponse();
@@ -130,7 +124,6 @@ public class IndexController implements ExampleInterface {
 
         com.signnow.api.document.response.DocumentDownloadGetResponse response = (com.signnow.api.document.response.DocumentDownloadGetResponse) client.send(downloadDoc).getResponse();
 
-        return new byte[0];
-//        return response.getFile().getBytes();
+        return response.getFile().getBytes();
     }
 }

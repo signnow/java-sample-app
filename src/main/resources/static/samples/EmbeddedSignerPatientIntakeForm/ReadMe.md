@@ -1,9 +1,11 @@
-package com.signnow.samples.EmbeddedSignerConsumerServices;
+package com.signnow.samples.EmbeddedSignerPatientIntakeForm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.signnow.Sdk;
 import com.signnow.api.document.request.DocumentGetRequest;
+import com.signnow.api.document.request.DocumentDownloadGetRequest;
 import com.signnow.api.document.response.DocumentGetResponse;
+import com.signnow.api.document.response.DocumentDownloadGetResponse;
 import com.signnow.api.document.response.data.Role;
 import com.signnow.api.document.response.data.RoleCollection;
 import com.signnow.api.embeddedinvite.request.DocumentInviteLinkPostRequest;
@@ -30,13 +32,13 @@ import java.util.Map;
 public class IndexController implements ExampleInterface {
 
     @Override
-    public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException, SignNowApiException, UnsupportedEncodingException {
+    public ResponseEntity<String> serveExample(Map<String, String> queryParams) throws IOException, SignNowApiException, UnsupportedEncodingException {
         String page = queryParams.get("page");
-        if ("finish".equals(page)) {
-            String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSignerConsumerServices/index.html")));
+        if ("download-container".equals(page)) {
+            String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSignerPatientIntakeForm/index.html")));
             return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
         } else {
-            String templateId = "da62bd76f1864e1fadff6251eca8152977ee3486";
+            String templateId = "2450f8a154f5450a93ea48ef795f6b679b92af1d";
             String link = createEmbeddedInviteAndReturnSigningLink(templateId);
             return ResponseEntity.status(302)
                     .header("Location", link)
@@ -45,22 +47,24 @@ public class IndexController implements ExampleInterface {
     }
 
     @Override
-    public ResponseEntity<String> handlePost(String formData) throws IOException, SignNowApiException {
+    public ResponseEntity<String> handleSubmission(String formData) throws IOException, SignNowApiException {
         Map<String, String> data = new ObjectMapper().readValue(formData, Map.class);
         String documentId = data.get("document_id");
 
-        ApiClient client = new Sdk().build().authenticate().getApiClient();
+        Sdk sdk = new Sdk();
+        ApiClient client = sdk.build().authenticate().getApiClient();
 
         byte[] file = downloadDocument(client, documentId);
 
         return ResponseEntity.ok()
                 .header("Content-Type", "application/pdf")
-                .header("Content-Disposition", "attachment; filename=\"completed_document.pdf\"")
+                .header("Content-Disposition", "attachment; filename=\"result.pdf\"")
                 .body(new String(file));
     }
 
     private String createEmbeddedInviteAndReturnSigningLink(String templateId) throws SignNowApiException, UnsupportedEncodingException {
-        ApiClient client = new Sdk().build().authenticate().getApiClient();
+        Sdk sdk = new Sdk();
+        ApiClient client = sdk.build().authenticate().getApiClient();
 
         CloneTemplatePostResponse cloneTemplateResponse = createDocumentFromTemplate(client, templateId);
 
@@ -86,7 +90,7 @@ public class IndexController implements ExampleInterface {
 
         DocumentInviteLinkPostResponse embeddedInviteResponse = (DocumentInviteLinkPostResponse) client.send(embeddedInvite).getResponse();
 
-        String redirectUrl = "http://localhost:8080/samples/EmbeddedSignerConsumerServices?page=finish&document_id=" + documentId;
+        String redirectUrl = "http://localhost:8080/samples/EmbeddedSignerPatientIntakeForm?page=download-container&document_id=" + documentId;
 
         return embeddedInviteResponse.getData().getLink() + "&redirect_uri=" + java.net.URLEncoder.encode(redirectUrl, "UTF-8");
     }
@@ -125,12 +129,11 @@ public class IndexController implements ExampleInterface {
     }
 
     private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException {
-        com.signnow.api.document.request.DocumentDownloadGetRequest downloadDoc = new com.signnow.api.document.request.DocumentDownloadGetRequest();
+        DocumentDownloadGetRequest downloadDoc = new DocumentDownloadGetRequest();
         downloadDoc.withDocumentId(documentId);
 
-        com.signnow.api.document.response.DocumentDownloadGetResponse response = (com.signnow.api.document.response.DocumentDownloadGetResponse) client.send(downloadDoc).getResponse();
+        DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadDoc).getResponse();
 
-        return new byte[0];
-//        return response.getFile().getBytes();
+        return response.getFile().getBytes();
     }
 }
