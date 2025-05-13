@@ -1,9 +1,12 @@
-package com.signnow.samples.EmbeddedSenderWithoutFormFile;
+package com.signnow.samples.EmbeddedSenderWithFormCreditLoanAgreement;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.signnow.Sdk;
 import com.signnow.api.document.request.DocumentGetRequest;
 import com.signnow.api.document.response.DocumentGetResponse;
+import com.signnow.api.documentfield.request.DocumentPrefillPutRequest;
+import com.signnow.api.documentfield.request.data.FieldCollection;
+import com.signnow.api.documentfield.request.data.Field;
 import com.signnow.api.embeddedsending.request.DocumentEmbeddedSendingLinkPostRequest;
 import com.signnow.api.embeddedsending.response.DocumentEmbeddedSendingLinkPostResponse;
 import com.signnow.api.template.request.CloneTemplatePostRequest;
@@ -27,19 +30,9 @@ import java.util.Map;
 @Controller
 public class IndexController implements ExampleInterface {
 
-    private static final String TEMPLATE_ID = "40d7a874baa043d881e3bc6bdab561445d64ad36";
-
-    public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException, SignNowApiException {
-        String page = queryParams.get("page");
-        ApiClient client = new Sdk().build().authenticate().getApiClient();
-
-        if ("download-with-status".equals(page)) {
-            String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSenderWithoutFormFile/index.html")));
-            return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
-        }
-
-        String link = getEmbeddedSendingLink(client);
-        return ResponseEntity.status(302).header("Location", link).build();
+    public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
+        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSenderWithFormCreditLoanAgreement/index.html")));
+        return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
     }
 
     public ResponseEntity<String> handlePost(String formData) throws IOException, SignNowApiException {
@@ -47,37 +40,61 @@ public class IndexController implements ExampleInterface {
         String action = data.get("action");
 
         ApiClient client = new Sdk().build().authenticate().getApiClient();
-        String documentId = data.get("document_id");
 
-        if ("invite-status".equals(action)) {
+        if ("create-embedded-invite".equals(action)) {
+            String fullName = data.get("full_name");
+            String templateId = "f8768c13d2f34774b6ce059e3008d9fc04d24378";
+
+            String link = createEmbeddedInviteAndReturnSendingLink(client, templateId, fullName);
+
+            return ResponseEntity.ok().body("{\"link\": \"" + link + "\"}");
+        } else if ("invite-status".equals(action)) {
+            String documentId = data.get("document_id");
             List<Object> statusList = getDocumentStatuses(client, documentId);
             return ResponseEntity.ok().body(new ObjectMapper().writeValueAsString(statusList));
         }
 
+        String documentId = data.get("document_id");
         byte[] file = downloadDocument(client, documentId);
+
         return ResponseEntity.ok()
                 .header("Content-Type", "application/pdf")
-                .header("Content-Disposition", "attachment; filename=\"document.pdf\"")
+                .header("Content-Disposition", "attachment; filename=\"result.pdf\"")
                 .body(new String(file));
     }
 
-    private String getEmbeddedSendingLink(ApiClient client) throws SignNowApiException {
-        CloneTemplatePostResponse cloneResponse = createDocumentFromTemplate(client);
-        String documentId = cloneResponse.getId();
+    private String createEmbeddedInviteAndReturnSendingLink(ApiClient client, String templateId, String fullName) throws SignNowApiException {
+        CloneTemplatePostResponse document = createDocumentFromTemplate(client, templateId);
 
-        String redirectUrl = "http://localhost:8080/samples/EmbeddedSenderWithoutFormFile?page=download-with-status&document_id=" + documentId;
+        prefillFields(client, document.getId(), fullName);
+
+        return getEmbeddedSendingLink(client, document.getId());
+    }
+
+    private CloneTemplatePostResponse createDocumentFromTemplate(ApiClient client, String templateId) throws SignNowApiException {
+        CloneTemplatePostRequest cloneTemplate = new CloneTemplatePostRequest();
+        cloneTemplate.withTemplateId(templateId);
+
+        return (CloneTemplatePostResponse) client.send(cloneTemplate).getResponse();
+    }
+
+    private void prefillFields(ApiClient client, String documentId, String fullName) throws SignNowApiException {
+        FieldCollection fields = new FieldCollection();
+        fields.add(new Field("Name", fullName));
+
+        DocumentPrefillPutRequest prefillRequest = new DocumentPrefillPutRequest(fields);
+        prefillRequest.withDocumentId(documentId);
+        client.send(prefillRequest);
+    }
+
+    private String getEmbeddedSendingLink(ApiClient client, String documentId) throws SignNowApiException {
+        String redirectUrl = "http://localhost:8080/samples/EmbeddedSenderWithFormCreditLoanAgreement?page=download-with-status&document_id=" + documentId;
+
         DocumentEmbeddedSendingLinkPostRequest request = new DocumentEmbeddedSendingLinkPostRequest("document", redirectUrl, 16, "self");
         request.withDocumentId(documentId);
 
         DocumentEmbeddedSendingLinkPostResponse response = (DocumentEmbeddedSendingLinkPostResponse) client.send(request).getResponse();
         return response.getData().getUrl();
-    }
-
-    private CloneTemplatePostResponse createDocumentFromTemplate(ApiClient client) throws SignNowApiException {
-        CloneTemplatePostRequest cloneTemplate = new CloneTemplatePostRequest();
-        cloneTemplate.withTemplateId(TEMPLATE_ID);
-
-        return (CloneTemplatePostResponse) client.send(cloneTemplate).getResponse();
     }
 
     private List<Object> getDocumentStatuses(ApiClient client, String documentId) throws SignNowApiException {

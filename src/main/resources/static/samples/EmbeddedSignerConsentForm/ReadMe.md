@@ -26,9 +26,9 @@ This specific example simulates a scenario where a dinosaur owner provides conse
         - Redirects the user to the embedded signing session.
 
 2. **Template Cloning**
-    - A **template** cannot be used directly for signing.
-    - It must first be **cloned** to create a **document** instance that can be signed.
-    - The document is cloned from a **preloaded template** on our **demo SignNow account**
+   - A **template** cannot be used directly for signing.
+   - It must first be **cloned** to create a **document** instance that can be signed.
+   - The document is cloned from a **preloaded template** on our **demo SignNow account**.
 
 3. **Embedded Invite Generation**
     - In order to get an **embedded invite link**, an **embedded invite** must be explicitly created.
@@ -36,7 +36,7 @@ This specific example simulates a scenario where a dinosaur owner provides conse
     - An invite is created and assigned to the signer's email.
 
 4. **Signing Link Generation**
-    - A signing link is generated using `DocumentInviteLinkPost`, and the redirect URL is appended.
+    - A signing link is generated using `DocumentInviteLinkPostRequest`, and the redirect URL is appended.
     - The user is redirected to this link for signing.
 
 5. **POST Request for Download**
@@ -45,10 +45,10 @@ This specific example simulates a scenario where a dinosaur owner provides conse
     - The app fetches the signed PDF and sends it to the user for download.
 
 ## Notes
-- The template ID used in this demo: 59b3ff2c50f240b69a3e50412ea3c32453ce8003.
+- The template ID used in this demo: bcf0ddaea1394b969a1ce628901097b8c547cd87.
 - The template is a "Beauty Procedures Consent Form" for Luxe Dinosaur Grooming Salon.
-- Signer's email is pulled from config: config('signnow.api.signer_email').
-- All API requests are made via the official SignNow SDK using credentials from the .env file.
+- Signer's email is hardcoded in the example as "signer@example.com".
+- All API requests are made via the official SignNow SDK using credentials from the environment configuration.
 
 ## Disclaimer
 This example is for demonstration purposes only. The embedded flow relies on a static template hosted on our demo SignNow account and should not be used in production without appropriate customization.

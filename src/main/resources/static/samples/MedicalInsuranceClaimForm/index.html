@@ -105,7 +105,7 @@
         handlePages({
             'download-container': async (el) => {
                 parent.postMessage({type: "SAMPLE_APP_FINISHED"}, location.origin)
-                
+
                 const downloadButton = document.querySelector('.button-secondary');
 
                 downloadButton.addEventListener('click', async () => {

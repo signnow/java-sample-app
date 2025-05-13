@@ -149,7 +149,7 @@
                         if (response.ok) {
                             const data = await response.json();
                             if (data.link) {
-                                window.location.href = data.link;
+                                window.parent.location.href = data.link;
                             } else {
                                 throw new Error('No link received from server');
                             }

@@ -1,129 +1,83 @@
-package com.signnow.samples.EmbeddedSignerConsumerServices;
+# Embedded Signer Sample: Veterinary Clinic Intake Form (Java Version)
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.signnow.Sdk;
-import com.signnow.api.document.request.DocumentGetRequest;
-import com.signnow.api.document.response.DocumentGetResponse;
-import com.signnow.api.document.response.data.Role;
-import com.signnow.api.document.response.data.RoleCollection;
-import com.signnow.api.embeddedinvite.request.DocumentInviteLinkPostRequest;
-import com.signnow.api.embeddedinvite.request.DocumentInvitePostRequest;
-import com.signnow.api.embeddedinvite.request.data.Invite;
-import com.signnow.api.embeddedinvite.request.data.InviteCollection;
-import com.signnow.api.embeddedinvite.response.DocumentInviteLinkPostResponse;
-import com.signnow.api.embeddedinvite.response.DocumentInvitePostResponse;
-import com.signnow.api.template.request.CloneTemplatePostRequest;
-import com.signnow.api.template.response.CloneTemplatePostResponse;
-import com.signnow.core.ApiClient;
-import com.signnow.core.exception.SignNowApiException;
-import com.signnow.javasampleapp.ExampleInterface;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+## Use Case Overview
 
-import java.io.IOException;
-import java.util.Map;
+This sample demonstrates how to use the SignNow **Java SDK** to implement an **Embedded Signer** workflow for a veterinary clinic. The user completes and signs a pre-defined "Veterinary Clinic Intake Form" directly within the application and is then redirected to a confirmation screen where they can download the completed document.
 
-@Controller
-public class IndexController implements ExampleInterface {
+The use case simulates a real-world scenario in the **consumer services** domain, where intake forms must be completed and signed digitally.
 
-    @Override
-    public ResponseEntity<String> serveExample() throws IOException {
-        String page = "index"; // Assume this is retrieved from the request
-        if ("finish".equals(page)) {
-            // Return the finish page
-            String html = "<html><body>Document signed! <a href=\"/download\">Download</a></body></html>";
-            return ResponseEntity.ok()
-                    .header("Content-Type", "text/html")
-                    .body(html);
-        } else {
-            // Initiate signing flow
-            String templateId = "da62bd76f1864e1fadff6251eca8152977ee3486";
-            String link = createEmbeddedInviteAndReturnSigningLink(templateId);
-            return ResponseEntity.status(302)
-                    .header("Location", link)
-                    .build();
-        }
-    }
+## Scenario: Embedded Signer Without Form
 
-    @Override
-    public ResponseEntity<String> handleSubmission(String formData) throws IOException, SignNowApiException {
-        Map<String, String> data = new ObjectMapper().readValue(formData, Map.class);
-        String documentId = data.get("document_id");
+### Step-by-Step Interaction:
 
-        Sdk sdk = new Sdk();
-        ApiClient client = sdk.build().authenticate().getApiClient();
+1. **Launch Signing Flow**
 
-        byte[] file = downloadDocument(client, documentId);
+    * The user accesses the application.
+    * If the URL does not contain `?page=finish`, the app:
 
-        return ResponseEntity.ok()
-                .header("Content-Type", "application/pdf")
-                .header("Content-Disposition", "attachment; filename=\"completed_document.pdf\"")
-                .body(new String(file));
-    }
+        * Clones a predefined template (Veterinary Clinic Intake Form).
+        * Creates a document instance from it.
+        * Generates an embedded invite.
+        * Redirects the user to the embedded signing session.
 
-    private String createEmbeddedInviteAndReturnSigningLink(String templateId) throws SignNowApiException {
-        Sdk sdk = new Sdk();
-        ApiClient client = sdk.build().authenticate().getApiClient();
+2. **Fill Out and Sign**
 
-        CloneTemplatePostResponse cloneTemplateResponse = createDocumentFromTemplate(client, templateId);
+    * The embedded interface allows the user to complete and sign the form directly in the app.
 
-        String signerEmail = "signer@example.com"; // Assume this is configured somewhere
-        String roleId = getSignerUniqueRoleId(client, cloneTemplateResponse.getId(), "Recipient 1");
+3. **Redirect to Finish Page**
 
-        DocumentInvitePostResponse documentInviteResponse = createEmbeddedInviteForOneSigner(client, cloneTemplateResponse.getId(), signerEmail, roleId);
+    * After signing, the user is redirected to a confirmation page (`page=finish`).
+    * The UI confirms completion and presents a download option.
 
-        return getEmbeddedInviteLink(client, cloneTemplateResponse.getId(), documentInviteResponse.getData().get(0).getId());
-    }
+4. **Download Signed Document**
 
-    private CloneTemplatePostResponse createDocumentFromTemplate(ApiClient client, String templateId) throws SignNowApiException {
-        CloneTemplatePostRequest cloneTemplate = new CloneTemplatePostRequest();
-        cloneTemplate.withTemplateId(templateId);
+    * Clicking the download button triggers a POST request containing the `document_id`.
+    * The server responds with the signed PDF, which is downloaded to the user's device.
 
-        return (CloneTemplatePostResponse) client.send(cloneTemplate).getResponse();
-    }
+## Technical Flow
 
-    private String getEmbeddedInviteLink(ApiClient client, String documentId, String inviteId) throws SignNowApiException {
-        DocumentInviteLinkPostRequest embeddedInvite = new DocumentInviteLinkPostRequest("none", 15);
-        embeddedInvite.withFieldInviteId(inviteId);
-        embeddedInvite.withDocumentId(documentId);
+### 1. **GET Request Handling**
 
-        DocumentInviteLinkPostResponse embeddedInviteResponse = (DocumentInviteLinkPostResponse) client.send(embeddedInvite).getResponse();
+* If `page=finish`:
 
-        String redirectUrl = "http://localhost:8080/samples/EmbeddedSignerConsumerServices?page=finish&document_id=" + documentId;
+    * Static `index.html` page is served.
+* Otherwise:
 
-        return embeddedInviteResponse.getData().getLink() + "&redirect_uri=" + java.net.URLEncoder.encode(redirectUrl, "UTF-8");
-    }
+    * The app:
 
-    private DocumentInvitePostResponse createEmbeddedInviteForOneSigner(ApiClient client, String documentId, String signerEmail, String roleId) throws SignNowApiException {
-        InviteCollection invites = new InviteCollection();
-        invites.add(new Invite(signerEmail, roleId, 1, "none"));
+        * Clones the template (`da62bd76f1864e1fadff6251eca8152977ee3486`).
+        * Retrieves the recipient role from the cloned document.
+        * Sends an embedded invite.
+        * Generates a secure signing link.
+        * Appends a `redirect_uri` and redirects the user.
 
-        DocumentInvitePostRequest documentInvite = new DocumentInvitePostRequest(invites, null);
-        documentInvite.withDocumentId(documentId);
+### 2. **Template Cloning**
 
-        return (DocumentInvitePostResponse) client.send(documentInvite).getResponse();
-    }
+* Uses SignNow API to clone the static template.
+* Required because templates cannot be signed directly.
 
-    private String getSignerUniqueRoleId(ApiClient client, String documentId, String signerRole) throws SignNowApiException {
-        DocumentGetRequest documentRequest = new DocumentGetRequest();
-        documentRequest.withDocumentId(documentId);
-        DocumentGetResponse documentResponse = (DocumentGetResponse) client.send(documentRequest).getResponse();
+### 3. **Embedded Invite Creation**
 
-        RoleCollection roles = documentResponse.getRoles();
-        for (Role role : roles) {
-            if (role.getName().equals(signerRole)) {
-                return role.getUniqueId();
-            }
-        }
-        return null;
-    }
+* Creates a single embedded invite with a signer email.
+* Retrieves the correct `role_id` for the signer.
 
-    private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException {
-        com.signnow.api.document.request.DocumentDownloadGetRequest downloadDoc = new com.signnow.api.document.request.DocumentDownloadGetRequest();
-        downloadDoc.withDocumentId(documentId);
+### 4. **Generate and Redirect to Signing Link**
 
-        com.signnow.api.document.response.DocumentDownloadGetResponse response = (com.signnow.api.document.response.DocumentDownloadGetResponse) client.send(downloadDoc).getResponse();
+* Uses `DocumentInviteLinkPostRequest`.
+* Includes a redirect URL back to `page=finish` with `document_id`.
 
-        return response.getFile().getBytes();
-    }
-}
+### 5. **Download the Document (POST Request)**
+
+* `document_id` is passed in the request body.
+* The backend fetches the signed PDF and returns it for download.
+
+## Notes
+
+* Template ID used: `da62bd76f1864e1fadff6251eca8152977ee3486`.
+* Template Name: **Veterinary Clinic Intake Form (Consumer Services)**.
+* The signer's email is currently hardcoded (`signer@example.com`).
+* All API interactions are handled via the official **SignNow Java SDK** using pre-authenticated credentials.
+
+## Disclaimer
+
+This example is for demonstration purposes only. The embedded signing experience is based on static demo templates and should be adapted with custom logic and dynamic configuration for production use.

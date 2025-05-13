@@ -1,4 +1,4 @@
-package com.signnow.samples.EmbeddedSignerWithFormInsurance;
+package com.signnow.samples.PrefillAndOneClickSendingAgreement;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.signnow.Sdk;
@@ -7,12 +7,9 @@ import com.signnow.api.document.response.DocumentGetResponse;
 import com.signnow.api.documentfield.request.DocumentPrefillPutRequest;
 import com.signnow.api.documentfield.request.data.FieldCollection;
 import com.signnow.api.documentfield.request.data.Field;
-import com.signnow.api.document.response.data.Role;
-import com.signnow.api.embeddedinvite.request.DocumentInviteLinkPostRequest;
-import com.signnow.api.embeddedinvite.request.DocumentInvitePostRequest;
-import com.signnow.api.embeddedinvite.request.data.Invite;
-import com.signnow.api.embeddedinvite.response.DocumentInviteLinkPostResponse;
-import com.signnow.api.embeddedinvite.response.DocumentInvitePostResponse;
+import com.signnow.api.documentinvite.request.SendInvitePostRequest;
+import com.signnow.api.documentinvite.request.data.To;
+import com.signnow.api.documentinvite.request.data.ToCollection;
 import com.signnow.api.template.request.CloneTemplatePostRequest;
 import com.signnow.api.template.response.CloneTemplatePostResponse;
 import com.signnow.core.ApiClient;
@@ -22,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import com.signnow.api.document.response.DocumentDownloadGetResponse;
 import com.signnow.api.document.request.DocumentDownloadGetRequest;
-import com.signnow.api.embeddedinvite.request.data.InviteCollection;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,7 +30,7 @@ import java.util.Map;
 public class IndexController implements ExampleInterface {
 
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
-        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSignerWithFormInsurance/index.html")));
+        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/PrefillAndOneClickSendingAgreement/index.html")));
         return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
     }
 
@@ -44,14 +40,18 @@ public class IndexController implements ExampleInterface {
 
         ApiClient client = new Sdk().build().authenticate().getApiClient();
 
-        if ("create-embedded-invite".equals(action)) {
-            String fullName = data.get("full_name");
+        if ("send-invite".equals(action)) {
+            String name = data.get("name");
             String email = data.get("email");
-            String templateId = "c78e902aa6834af6ba92e8a6f92b603108e1bbbb";
+            String templateId = "e30d6e58c82d43f598e365420f3c665a048a7d81";
 
-            String link = createEmbeddedInviteAndReturnSigningLink(client, templateId, fullName, email);
+            String documentId = sendInvite(client, templateId, name, email);
 
-            return ResponseEntity.ok().body("{\"link\": \"" + link + "\"}");
+            return ResponseEntity.ok().body("{\"status\": \"success\", \"document_id\": \"" + documentId + "\"}");
+        } else if ("invite-status".equals(action)) {
+            String documentId = data.get("document_id");
+            Map<String, Object> statusList = getDocumentStatuses(client, documentId);
+            return ResponseEntity.ok().body(new ObjectMapper().writeValueAsString(statusList));
         }
 
         String documentId = data.get("document_id");
@@ -59,18 +59,37 @@ public class IndexController implements ExampleInterface {
 
         return ResponseEntity.ok()
                 .header("Content-Type", "application/pdf")
-                .header("Content-Disposition", "attachment; filename=\"result.pdf\"")
+                .header("Content-Disposition", "attachment; filename=\"signed_document.pdf\"")
                 .body(new String(file));
     }
 
-    private String createEmbeddedInviteAndReturnSigningLink(ApiClient client, String templateId, String fullName, String email) throws SignNowApiException, IOException {
+    private String sendInvite(ApiClient client, String templateId, String name, String email) throws SignNowApiException {
         CloneTemplatePostResponse document = createDocumentFromTemplate(client, templateId);
 
-        prefillFields(client, document.getId(), fullName, email);
+        prefillFields(client, document.getId(), name);
 
         String roleId = getSignerUniqueRoleId(client, document.getId(), "Recipient 1");
 
-        return getEmbeddedInviteLink(client, document.getId(), createEmbeddedInviteForOneSigner(client, document.getId(), email, roleId));
+        ToCollection to = new ToCollection();
+        to.add(new To(
+                email, // email
+                roleId, //roleId
+                "signer", //role
+                1, //order
+                "Subject", //subject
+                "Message" //message
+        ));
+
+        SendInvitePostRequest inviteRequest = new SendInvitePostRequest(
+                document.getId(), // documentId
+                to, // recipients
+                "from@email.com", // sender email
+                "Subject", // subject
+                "Message" // message
+        );
+        client.send(inviteRequest);
+
+        return document.getId();
     }
 
     private CloneTemplatePostResponse createDocumentFromTemplate(ApiClient client, String templateId) throws SignNowApiException {
@@ -80,37 +99,13 @@ public class IndexController implements ExampleInterface {
         return (CloneTemplatePostResponse) client.send(cloneTemplate).getResponse();
     }
 
-    private void prefillFields(ApiClient client, String documentId, String fullName, String email) throws SignNowApiException {
+    private void prefillFields(ApiClient client, String documentId, String name) throws SignNowApiException {
         FieldCollection fields = new FieldCollection();
-        fields.add(new Field("Name", fullName));
-        fields.add(new Field("Email", email));
+        fields.add(new Field("Name", name));
 
         DocumentPrefillPutRequest prefillRequest = new DocumentPrefillPutRequest(fields);
         prefillRequest.withDocumentId(documentId);
         client.send(prefillRequest);
-    }
-
-    private String getEmbeddedInviteLink(ApiClient client, String documentId, String inviteId) throws SignNowApiException, IOException {
-        DocumentInviteLinkPostRequest embeddedInvite = new DocumentInviteLinkPostRequest("none", 15);
-        embeddedInvite.withFieldInviteId(inviteId);
-        embeddedInvite.withDocumentId(documentId);
-
-        DocumentInviteLinkPostResponse embeddedInviteResponse = (DocumentInviteLinkPostResponse) client.send(embeddedInvite).getResponse();
-
-        String redirectUrl = "http://localhost:8080/samples/EmbeddedSignerWithFormInsurance?page=download-container&document_id=" + documentId;
-
-        return embeddedInviteResponse.getData().getLink() + "&redirect_uri=" + java.net.URLEncoder.encode(redirectUrl, "UTF-8");
-    }
-
-    private String createEmbeddedInviteForOneSigner(ApiClient client, String documentId, String signerEmail, String roleId) throws SignNowApiException {
-        InviteCollection invites = new InviteCollection();
-        invites.add(new Invite(signerEmail, roleId, 1, null, null));
-
-        DocumentInvitePostRequest documentInvite = new DocumentInvitePostRequest(invites, null);
-        documentInvite.withDocumentId(documentId);
-
-        DocumentInvitePostResponse documentInviteResponse = (DocumentInvitePostResponse) client.send(documentInvite).getResponse();
-        return documentInviteResponse.getData().get(0).getId();
     }
 
     private String getSignerUniqueRoleId(ApiClient client, String documentId, String signerRole) throws SignNowApiException {
@@ -118,12 +113,27 @@ public class IndexController implements ExampleInterface {
         documentRequest.withDocumentId(documentId);
         DocumentGetResponse documentResponse = (DocumentGetResponse) client.send(documentRequest).getResponse();
 
-        for (Role role : documentResponse.getRoles()) {
-            if (role.getName().equals(signerRole)) {
-                return role.getUniqueId();
-            }
-        }
-        return null;
+        return documentResponse.getRoles().stream()
+                .filter(role -> signerRole.equals(role.getName()))
+                .findFirst()
+                .map(role -> role.getUniqueId())
+                .orElseThrow(() -> new IllegalArgumentException("Role not found"));
+    }
+
+    private Map<String, Object> getDocumentStatuses(ApiClient client, String documentId) throws SignNowApiException {
+        DocumentGetRequest documentRequest = new DocumentGetRequest();
+        documentRequest.withDocumentId(documentId);
+        DocumentGetResponse documentResponse = (DocumentGetResponse) client.send(documentRequest).getResponse();
+
+        Map<String, Object> statuses = new HashMap<>();
+        documentResponse.getFieldInvites().forEach(invite -> {
+            Map<String, String> status = new HashMap<>();
+            status.put("name", invite.getEmail());
+            status.put("status", invite.getStatus());
+            statuses.put(invite.getEmail(), status);
+        });
+
+        return statuses;
     }
 
     private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {

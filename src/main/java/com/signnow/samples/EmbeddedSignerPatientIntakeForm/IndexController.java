@@ -31,6 +31,19 @@ import java.util.Map;
 @Controller
 public class IndexController implements ExampleInterface {
 
+    /**
+     * Handles GET requests to the signing flow.
+     * <p>
+     * If the "page" query parameter is "download-container", serves the static confirmation page.
+     * Otherwise, initiates the signing flow by cloning the template, creating an embedded invite,
+     * and redirecting the user to the generated embedded signing link.
+     *
+     * @param queryParams Query parameters from the HTTP request
+     * @return ResponseEntity containing either an HTML page or a redirect
+     * @throws IOException if the HTML file cannot be read
+     * @throws SignNowApiException if a SignNow API call fails
+     * @throws UnsupportedEncodingException if URL encoding fails
+     */
     @Override
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException, SignNowApiException, UnsupportedEncodingException {
         String page = queryParams.get("page");
@@ -46,6 +59,17 @@ public class IndexController implements ExampleInterface {
         }
     }
 
+    /**
+     * Handles POST requests to download a completed and signed document.
+     * <p>
+     * Parses the document ID from form data and uses the SignNow API to retrieve
+     * and return the signed document as a downloadable PDF.
+     *
+     * @param formData JSON-encoded form data containing the document ID
+     * @return PDF file as an HTTP response
+     * @throws IOException if JSON parsing fails
+     * @throws SignNowApiException if a SignNow API call fails
+     */
     @Override
     public ResponseEntity<String> handlePost(String formData) throws IOException, SignNowApiException {
         Map<String, String> data = new ObjectMapper().readValue(formData, Map.class);
@@ -62,6 +86,21 @@ public class IndexController implements ExampleInterface {
                 .body(new String(file));
     }
 
+    /**
+     * Orchestrates the full embedded signing invitation process.
+     * <p>
+     * Steps:
+     * 1. Authenticates via SDK
+     * 2. Clones the document from a predefined template
+     * 3. Retrieves the signer's role ID
+     * 4. Creates an embedded invite
+     * 5. Generates a signing link with redirect back to the confirmation page
+     *
+     * @param templateId ID of the template to use
+     * @return URL to the embedded signing session
+     * @throws SignNowApiException if a SignNow API call fails
+     * @throws UnsupportedEncodingException if redirect URL encoding fails
+     */
     private String createEmbeddedInviteAndReturnSigningLink(String templateId) throws SignNowApiException, UnsupportedEncodingException {
         Sdk sdk = new Sdk();
         ApiClient client = sdk.build().authenticate().getApiClient();
@@ -76,6 +115,14 @@ public class IndexController implements ExampleInterface {
         return getEmbeddedInviteLink(client, cloneTemplateResponse.getId(), documentInviteResponse.getData().get(0).getId());
     }
 
+    /**
+     * Clones a predefined template and returns the created document. Create document from template
+     *
+     * @param client Authenticated SignNow API client
+     * @param templateId Template ID to clone
+     * @return CloneTemplatePostResponse with new document ID
+     * @throws SignNowApiException if cloning fails
+     */
     private CloneTemplatePostResponse createDocumentFromTemplate(ApiClient client, String templateId) throws SignNowApiException {
         CloneTemplatePostRequest cloneTemplate = new CloneTemplatePostRequest();
         cloneTemplate.withTemplateId(templateId);
@@ -83,6 +130,18 @@ public class IndexController implements ExampleInterface {
         return (CloneTemplatePostResponse) client.send(cloneTemplate).getResponse();
     }
 
+    /**
+     * Generates an embedded signing link for a signer.
+     * <p>
+     * The link includes a redirect URI that points to the post-signing confirmation page.
+     *
+     * @param client Authenticated SignNow API client
+     * @param documentId ID of the document to sign
+     * @param inviteId ID of the invite for the signer
+     * @return URL to embedded signing interface with redirect back to the app
+     * @throws SignNowApiException if link generation fails
+     * @throws UnsupportedEncodingException if redirect URL encoding fails
+     */
     private String getEmbeddedInviteLink(ApiClient client, String documentId, String inviteId) throws SignNowApiException, UnsupportedEncodingException {
         DocumentInviteLinkPostRequest embeddedInvite = new DocumentInviteLinkPostRequest("none", 15);
         embeddedInvite.withFieldInviteId(inviteId);
@@ -95,6 +154,16 @@ public class IndexController implements ExampleInterface {
         return embeddedInviteResponse.getData().getLink() + "&redirect_uri=" + java.net.URLEncoder.encode(redirectUrl, "UTF-8");
     }
 
+    /**
+     * Creates an embedded invite for a single signer using email and role ID.
+     *
+     * @param client Authenticated SignNow API client
+     * @param documentId ID of the document to sign
+     * @param signerEmail Email address of the signer
+     * @param roleId Role ID to assign to the signer
+     * @return DocumentInvitePostResponse containing invite information
+     * @throws SignNowApiException if invite creation fails
+     */
     private DocumentInvitePostResponse createEmbeddedInviteForOneSigner(ApiClient client, String documentId, String signerEmail, String roleId) throws SignNowApiException {
         InviteCollection invites = new InviteCollection();
         invites.add(new Invite(
@@ -114,6 +183,15 @@ public class IndexController implements ExampleInterface {
         return (DocumentInvitePostResponse) client.send(documentInvite).getResponse();
     }
 
+    /**
+     * Retrieves the unique role ID for a signer based on the role name.
+     *
+     * @param client Authenticated SignNow API client
+     * @param documentId ID of the document
+     * @param signerRole Name of the role to search for (e.g., "Recipient 1")
+     * @return Unique role ID if found, null otherwise
+     * @throws SignNowApiException if role retrieval fails
+     */
     private String getSignerUniqueRoleId(ApiClient client, String documentId, String signerRole) throws SignNowApiException {
         DocumentGetRequest documentRequest = new DocumentGetRequest();
         documentRequest.withDocumentId(documentId);
@@ -128,12 +206,22 @@ public class IndexController implements ExampleInterface {
         return null;
     }
 
-    private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException {
-        DocumentDownloadGetRequest downloadDoc = new DocumentDownloadGetRequest();
-        downloadDoc.withDocumentId(documentId);
+    /**
+     * Downloads the completed and signed document from the SignNow API.
+     *
+     * @param client Authenticated SignNow API client
+     * @param documentId ID of the signed document
+     * @return Byte array of the signed PDF
+     * @throws SignNowApiException if document download fails
+     */
+    private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {
+        DocumentDownloadGetRequest downloadRequest = new DocumentDownloadGetRequest();
+        downloadRequest.withDocumentId(documentId);
 
-        DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadDoc).getResponse();
-        return new byte[0];
-//        return response.getFile().getBytes();
+        DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadRequest).getResponse();
+
+        byte[] fileBytes = Files.readAllBytes(response.getFile().toPath());
+        response.getFile().delete();
+        return fileBytes;
     }
 }

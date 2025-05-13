@@ -33,6 +33,19 @@ import java.util.Map;
 @Controller
 public class IndexController implements ExampleInterface {
 
+    /**
+     * Handles GET requests to the form or confirmation screen.
+     * <p>
+     * If `page=finish` or no `page` is provided, serves the static HTML finish page.
+     * Otherwise, clones the document, pre-fills fields, creates an invite,
+     * and redirects the user to the embedded signing session.
+     *
+     * @param queryParams HTTP query parameters
+     * @return HTML response or redirect to embedded signing session
+     * @throws IOException If reading the HTML file fails
+     * @throws SignNowApiException If any SignNow API call fails
+     * @throws UnsupportedEncodingException If redirect URL encoding fails
+     */
     @Override
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException, SignNowApiException, UnsupportedEncodingException {
         String page = queryParams.get("page");
@@ -48,6 +61,18 @@ public class IndexController implements ExampleInterface {
         }
     }
 
+    /**
+     * Handles POST requests for two possible actions:
+     * <ul>
+     *     <li>`create-embedded-invite` — initiates the signing flow with pre-filled fields</li>
+     *     <li>otherwise — treats the request as a download of a signed document</li>
+     * </ul>
+     *
+     * @param formData JSON-encoded form data with user input or document ID
+     * @return JSON response with signing link or PDF download
+     * @throws IOException If formData parsing fails
+     * @throws SignNowApiException If any SignNow API call fails
+     */
     @Override
     public ResponseEntity<String> handlePost(String formData) throws IOException, SignNowApiException {
         Map<String, String> data = new ObjectMapper().readValue(formData, Map.class);
@@ -75,6 +100,23 @@ public class IndexController implements ExampleInterface {
         }
     }
 
+    /**
+     * Creates an embedded invite with pre-filled document fields and returns the signing link.
+     * <p>
+     * Steps:
+     * 1. Clone template
+     * 2. Fill in fields (e.g., full name, email)
+     * 3. Find signer role
+     * 4. Create embedded invite
+     * 5. Generate embedded signing link
+     *
+     * @param templateId Template ID to clone
+     * @param fullName Full name to pre-fill
+     * @param email Email to pre-fill
+     * @return Embedded signing URL
+     * @throws SignNowApiException If API request fails
+     * @throws UnsupportedEncodingException If redirect URL encoding fails
+     */
     private String createEmbeddedInviteAndReturnSigningLink(String templateId, String fullName, String email) throws SignNowApiException, UnsupportedEncodingException {
         Sdk sdk = new Sdk();
         ApiClient client = sdk.build().authenticate().getApiClient();
@@ -91,6 +133,14 @@ public class IndexController implements ExampleInterface {
         return getEmbeddedInviteLink(client, cloneTemplateResponse.getId(), documentInviteResponse.getData().get(0).getId());
     }
 
+    /**
+     * Clones a document template to create a new signable document. Скуфеу вщсгьуте акщт еуьздфеу
+     *
+     * @param client Authenticated SignNow API client
+     * @param templateId ID of the template to clone
+     * @return CloneTemplatePostResponse containing the new document ID
+     * @throws SignNowApiException If the cloning operation fails
+     */
     private CloneTemplatePostResponse createDocumentFromTemplate(ApiClient client, String templateId) throws SignNowApiException {
         CloneTemplatePostRequest cloneTemplate = new CloneTemplatePostRequest();
         cloneTemplate.withTemplateId(templateId);
@@ -98,6 +148,18 @@ public class IndexController implements ExampleInterface {
         return (CloneTemplatePostResponse) client.send(cloneTemplate).getResponse();
     }
 
+    /**
+     * Generates a secure embedded signing link using the document and invite IDs.
+     * <p>
+     * The link includes a redirect URI back to the app after signing is complete.
+     *
+     * @param client Authenticated SignNow API client
+     * @param documentId ID of the cloned document
+     * @param inviteId ID of the created invite
+     * @return URL to the embedded signing session
+     * @throws SignNowApiException If the API call fails
+     * @throws UnsupportedEncodingException If the redirect URL cannot be encoded
+     */
     private String getEmbeddedInviteLink(ApiClient client, String documentId, String inviteId) throws SignNowApiException, UnsupportedEncodingException {
         DocumentInviteLinkPostRequest embeddedInvite = new DocumentInviteLinkPostRequest("none", 15);
         embeddedInvite.withFieldInviteId(inviteId);
@@ -110,6 +172,16 @@ public class IndexController implements ExampleInterface {
         return embeddedInviteResponse.getData().getLink() + "&redirect_uri=" + java.net.URLEncoder.encode(redirectUrl, "UTF-8");
     }
 
+    /**
+     * Creates an embedded signing invite for a single signer using email and role ID.
+     *
+     * @param client Authenticated SignNow API client
+     * @param documentId ID of the document to sign
+     * @param signerEmail Signer's email address
+     * @param roleId Unique role ID to assign to signer
+     * @return DocumentInvitePostResponse containing invite data
+     * @throws SignNowApiException If invite creation fails
+     */
     private DocumentInvitePostResponse createEmbeddedInviteForOneSigner(ApiClient client, String documentId, String signerEmail, String roleId) throws SignNowApiException {
         InviteCollection invites = new InviteCollection();
         invites.add(new Invite(
@@ -129,6 +201,17 @@ public class IndexController implements ExampleInterface {
         return (DocumentInvitePostResponse) client.send(documentInvite).getResponse();
     }
 
+    /**
+     * Retrieves the unique role ID for a signer role by name.
+     * <p>
+     * This ID is required to properly assign the signer in the invite.
+     *
+     * @param client Authenticated SignNow API client
+     * @param documentId ID of the cloned document
+     * @param signerRole Role name to search for (e.g., "Recipient 1")
+     * @return Unique role ID or null if not found
+     * @throws SignNowApiException If document retrieval fails
+     */
     private String getSignerUniqueRoleId(ApiClient client, String documentId, String signerRole) throws SignNowApiException {
         DocumentGetRequest documentRequest = new DocumentGetRequest();
         documentRequest.withDocumentId(documentId);
@@ -143,15 +226,35 @@ public class IndexController implements ExampleInterface {
         return null;
     }
 
-    private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException {
-        DocumentDownloadGetRequest downloadDoc = new DocumentDownloadGetRequest();
-        downloadDoc.withDocumentId(documentId);
+    /**
+     * Downloads a completed and signed document as a PDF byte array.
+     *
+     * @param client Authenticated SignNow API client
+     * @param documentId ID of the signed document
+     * @return PDF file content as byte array
+     * @throws SignNowApiException If download fails
+     */
+    private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {
+        DocumentDownloadGetRequest downloadRequest = new DocumentDownloadGetRequest();
+        downloadRequest.withDocumentId(documentId);
 
-        DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadDoc).getResponse();
-        return new byte[0];
-//        return response.getFile().getBytes();
+        DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadRequest).getResponse();
+
+        byte[] fileBytes = Files.readAllBytes(response.getFile().toPath());
+        response.getFile().delete();
+        return fileBytes;
     }
 
+    /**
+     * Pre-fills fields in the document with provided values (e.g., name, email).
+     * <p>
+     * This ensures the signer sees their data pre-filled before signing.
+     *
+     * @param client Authenticated SignNow API client
+     * @param documentId ID of the document to prefill
+     * @param fieldsValue Map of field names to values to insert
+     * @throws SignNowApiException If the prefill API call fails
+     */
     private void prefillFields(ApiClient client, String documentId, Map<String, String> fieldsValue) throws SignNowApiException {
         FieldCollection fields = new FieldCollection();
 

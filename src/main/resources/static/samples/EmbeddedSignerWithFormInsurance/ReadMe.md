@@ -3,7 +3,7 @@
 
 ## Use Case Overview
 
-This sample application demonstrates how to implement an **Embedded Signer With Form** workflow using the SignNow API. The app guides users through a seamless process of filling out, signing, and downloading a **Medical Insurance Claim Form**. This workflow is designed to enhance user experience by pre-filling user information and providing an intuitive interface for document signing and downloading.
+This sample application demonstrates how to implement an **Embedded Signer With Form** workflow using the SignNow API in a Java environment. The app guides users through a seamless process of filling out, signing, and downloading a **Medical Insurance Claim Form**. This workflow is designed to enhance user experience by pre-filling user information and providing an intuitive interface for document signing and downloading.
 
 ## Scenario: Embedded Signer With Form
 
