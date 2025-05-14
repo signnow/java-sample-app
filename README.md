@@ -1,6 +1,6 @@
 # SignNow Java SDK Sample Application
 
-This is a demonstration project that showcases how to use the [SignNow Java SDK](https://github.com/signnow/SignNowJavaSDK) to interact with the SignNow API.
+This is a demonstration project that showcases how to use the [SignNow Java SDK](https://github.com/signnow/SNJavaSDK) to interact with the SignNow API.
 
 Each sample represents a standalone use case and is implemented in a separate directory under:
 
