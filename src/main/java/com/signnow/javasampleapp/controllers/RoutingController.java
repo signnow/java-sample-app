@@ -53,7 +53,7 @@ public class RoutingController {
     }
 
     @PostMapping("/api/samples/{exampleName}")
-    public ResponseEntity<String> handleFormSubmission(
+    public ResponseEntity<?> handleFormSubmission(
             @PathVariable String exampleName,
             @RequestBody String formData) throws IOException {
         if (!exampleName.matches("^[a-zA-Z0-9_]+$")) {

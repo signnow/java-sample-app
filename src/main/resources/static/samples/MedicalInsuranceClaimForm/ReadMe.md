@@ -45,7 +45,7 @@ This specific example mimics a real-world healthcare scenario where a **Medical 
     - The app fetches the signed PDF and triggers a download.
 
 ## Notes
-- The template ID used in this demo: `518933bacd634b82883cb232ff295ff45a8e5217`
+- The template ID used in this demo: `60d8e92f12004fda8985d4574237507e6407530d`
 - The template is a "Medical Insurance Claim Form".
 - The signer's email is pulled from config: `config('signnow.api.signer_email')`
 - All API operations are performed using the official SignNow PHP SDK and `.env` credentials

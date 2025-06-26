@@ -31,6 +31,8 @@ import java.util.Map;
 @Controller
 public class IndexController implements ExampleInterface {
 
+    private static final String TEMPLATE_ID = "4078899bbf4446eea7ae0e157e742bbd93be191f";
+
     /**
      * Handles GET requests to the signing flow.
      * <p>
@@ -51,8 +53,7 @@ public class IndexController implements ExampleInterface {
             String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSignerPatientIntakeForm/index.html")));
             return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
         } else {
-            String templateId = "2450f8a154f5450a93ea48ef795f6b679b92af1d";
-            String link = createEmbeddedInviteAndReturnSigningLink(templateId);
+            String link = createEmbeddedInviteAndReturnSigningLink(TEMPLATE_ID);
             return ResponseEntity.status(302)
                     .header("Location", link)
                     .build();
@@ -71,7 +72,7 @@ public class IndexController implements ExampleInterface {
      * @throws SignNowApiException if a SignNow API call fails
      */
     @Override
-    public ResponseEntity<String> handlePost(String formData) throws IOException, SignNowApiException {
+    public ResponseEntity<?> handlePost(String formData) throws IOException, SignNowApiException {
         Map<String, String> data = new ObjectMapper().readValue(formData, Map.class);
         String documentId = data.get("document_id");
 
@@ -83,7 +84,7 @@ public class IndexController implements ExampleInterface {
         return ResponseEntity.ok()
                 .header("Content-Type", "application/pdf")
                 .header("Content-Disposition", "attachment; filename=\"result.pdf\"")
-                .body(new String(file));
+                .body(file);
     }
 
     /**
@@ -216,7 +217,7 @@ public class IndexController implements ExampleInterface {
      */
     private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {
         DocumentDownloadGetRequest downloadRequest = new DocumentDownloadGetRequest();
-        downloadRequest.withDocumentId(documentId);
+        downloadRequest.withDocumentId(documentId).withType("collapsed");
 
         DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadRequest).getResponse();
 

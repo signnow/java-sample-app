@@ -33,12 +33,14 @@ import java.util.Map;
 @Controller
 public class IndexController implements ExampleInterface {
 
+    private static final String TEMPLATE_ID = "60d8e92f12004fda8985d4574237507e6407530d";
+
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
         String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSignerWithFormInsurance/index.html")));
         return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
     }
 
-    public ResponseEntity<String> handlePost(String formData) throws IOException, SignNowApiException {
+    public ResponseEntity<?> handlePost(String formData) throws IOException, SignNowApiException {
         Map<String, String> data = new ObjectMapper().readValue(formData, Map.class);
         String action = data.get("action");
 
@@ -47,9 +49,8 @@ public class IndexController implements ExampleInterface {
         if ("create-embedded-invite".equals(action)) {
             String fullName = data.get("full_name");
             String email = data.get("email");
-            String templateId = "c78e902aa6834af6ba92e8a6f92b603108e1bbbb";
 
-            String link = createEmbeddedInviteAndReturnSigningLink(client, templateId, fullName, email);
+            String link = createEmbeddedInviteAndReturnSigningLink(client, TEMPLATE_ID, fullName, email);
 
             return ResponseEntity.ok().body("{\"link\": \"" + link + "\"}");
         }
@@ -60,7 +61,7 @@ public class IndexController implements ExampleInterface {
         return ResponseEntity.ok()
                 .header("Content-Type", "application/pdf")
                 .header("Content-Disposition", "attachment; filename=\"result.pdf\"")
-                .body(new String(file));
+                .body(file);
     }
 
     private String createEmbeddedInviteAndReturnSigningLink(ApiClient client, String templateId, String fullName, String email) throws SignNowApiException, IOException {
@@ -128,7 +129,7 @@ public class IndexController implements ExampleInterface {
 
     private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {
         DocumentDownloadGetRequest downloadRequest = new DocumentDownloadGetRequest();
-        downloadRequest.withDocumentId(documentId);
+        downloadRequest.withDocumentId(documentId).withType("collapsed");
 
         DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadRequest).getResponse();
 

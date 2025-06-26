@@ -45,7 +45,7 @@ This specific example mimics a real-world healthcare scenario where a **Patient 
     - The app fetches the signed PDF and sends it to the user for download.
 
 ## Notes
-- The template ID used in this demo: `2e8ab2b6590645c1934ca539b4756c8974142bf6`.
+- The template ID used in this demo: `4078899bbf4446eea7ae0e157e742bbd93be191f`.
 - The template is a "Traditional Chinese Medicine Patient Intake Form".
 - Signer's email is pulled from config: `config('signnow.api.signer_email')`.
 - All API requests are made via the official SignNow SDK using the `.env` credentials.
