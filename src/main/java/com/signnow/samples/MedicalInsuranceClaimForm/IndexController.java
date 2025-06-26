@@ -50,16 +50,8 @@ public class IndexController implements ExampleInterface {
      */
     @Override
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException, SignNowApiException, UnsupportedEncodingException {
-        String page = queryParams.get("page");
-        if (page == null || page.equals("finish")) {
-            String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/MedicalInsuranceClaimForm/index.html")));
-            return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
-        } else {
-            String link = createEmbeddedInviteAndReturnSigningLink(TEMPLATE_ID, queryParams.get("full_name"), queryParams.get("email"));
-            return ResponseEntity.status(302)
-                    .header("Location", link)
-                    .build();
-        }
+        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/MedicalInsuranceClaimForm/index.html")));
+        return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
     }
 
     /**
