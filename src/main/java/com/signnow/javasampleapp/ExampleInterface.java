@@ -20,5 +20,5 @@ public interface ExampleInterface {
      * @param formData Form data from the request.
      * @return The HTML body of the example.
      */
-    ResponseEntity<String> handlePost(String formData) throws IOException, SignNowApiException;
+    ResponseEntity<?> handlePost(String formData) throws IOException, SignNowApiException;
 }

@@ -27,7 +27,7 @@ import java.util.Map;
 @Controller
 public class IndexController implements ExampleInterface {
 
-    private static final String TEMPLATE_ID = "40d7a874baa043d881e3bc6bdab561445d64ad36";
+    private static final String TEMPLATE_ID = "76713f00c106425ea8b673c49fd94c0145643c34";
 
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException, SignNowApiException {
         String page = queryParams.get("page");
@@ -42,7 +42,7 @@ public class IndexController implements ExampleInterface {
         return ResponseEntity.status(302).header("Location", link).build();
     }
 
-    public ResponseEntity<String> handlePost(String formData) throws IOException, SignNowApiException {
+    public ResponseEntity<?> handlePost(String formData) throws IOException, SignNowApiException {
         Map<String, String> data = new ObjectMapper().readValue(formData, Map.class);
         String action = data.get("action");
 
@@ -58,7 +58,7 @@ public class IndexController implements ExampleInterface {
         return ResponseEntity.ok()
                 .header("Content-Type", "application/pdf")
                 .header("Content-Disposition", "attachment; filename=\"document.pdf\"")
-                .body(new String(file));
+                .body(file);
     }
 
     private String getEmbeddedSendingLink(ApiClient client) throws SignNowApiException {
@@ -98,7 +98,7 @@ public class IndexController implements ExampleInterface {
 
     private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {
         DocumentDownloadGetRequest downloadRequest = new DocumentDownloadGetRequest();
-        downloadRequest.withDocumentId(documentId);
+        downloadRequest.withDocumentId(documentId).withType("collapsed");
 
         DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadRequest).getResponse();
 

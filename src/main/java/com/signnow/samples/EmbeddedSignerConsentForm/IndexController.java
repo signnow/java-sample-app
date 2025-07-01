@@ -29,6 +29,8 @@ import java.util.Map;
 @Controller
 public class IndexController implements ExampleInterface {
 
+    private static final String TEMPLATE_ID = "3d28c78de8ec43ccab81a3e7dde07925cb5a1d29";
+
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException, SignNowApiException {
         String page = queryParams.get("page");
         if ("download-container".equals(page)) {
@@ -36,13 +38,12 @@ public class IndexController implements ExampleInterface {
             return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
         } else {
             ApiClient client = new Sdk().build().authenticate().getApiClient();
-            String templateId = "bcf0ddaea1394b969a1ce628901097b8c547cd87";
-            String link = createEmbeddedSenderAndReturnSigningLink(client, templateId);
+            String link = createEmbeddedSenderAndReturnSigningLink(client, TEMPLATE_ID);
             return ResponseEntity.status(302).header("Location", link).build();
         }
     }
 
-    public ResponseEntity<String> handlePost(String formData) throws IOException, SignNowApiException {
+    public ResponseEntity<?> handlePost(String formData) throws IOException, SignNowApiException {
         Map<String, String> data = new ObjectMapper().readValue(formData, Map.class);
         String documentId = data.get("document_id");
 
@@ -52,7 +53,7 @@ public class IndexController implements ExampleInterface {
         return ResponseEntity.ok()
                 .header("Content-Type", "application/pdf")
                 .header("Content-Disposition", "attachment; filename=\"result.pdf\"")
-                .body(new String(file));
+                .body(file);
     }
 
     private String createEmbeddedSenderAndReturnSigningLink(ApiClient client, String templateId) throws SignNowApiException, IOException {
@@ -105,7 +106,7 @@ public class IndexController implements ExampleInterface {
 
     private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {
         DocumentDownloadGetRequest downloadRequest = new DocumentDownloadGetRequest();
-        downloadRequest.withDocumentId(documentId);
+        downloadRequest.withDocumentId(documentId).withType("collapsed");
 
         DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadRequest).getResponse();
 

@@ -447,3 +447,7 @@ button {
   text-align: center;
   padding-top: 50px;
 }
+
+.status-badge span {
+    text-transform: capitalize;
+}

@@ -24,7 +24,7 @@ This sample application demonstrates how to implement an **Embedded Signer With 
 2. **Template Cloning**
     - The document template cannot be sent for signing directly.
     - It must first be **cloned** to create a **signable document**.
-    - The document is cloned from a **preloaded template** in our **demo SignNow account** using TemplateId: `'c78e902aa6834af6ba92e8a6f92b603108e1bbbb'`.
+    - The document is cloned from a **preloaded template** in our **demo SignNow account** using TemplateId: `'60d8e92f12004fda8985d4574237507e6407530d'`.
 
 3. **Field Prefilling**
     - The cloned document is pre-filled with values from the submitted form (`Name`, `Email`).

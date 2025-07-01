@@ -45,7 +45,7 @@ This specific example simulates a scenario where a dinosaur owner provides conse
     - The app fetches the signed PDF and sends it to the user for download.
 
 ## Notes
-- The template ID used in this demo: bcf0ddaea1394b969a1ce628901097b8c547cd87.
+- The template ID used in this demo: 3d28c78de8ec43ccab81a3e7dde07925cb5a1d29.
 - The template is a "Beauty Procedures Consent Form" for Luxe Dinosaur Grooming Salon.
 - Signer's email is hardcoded in the example as "signer@example.com".
 - All API requests are made via the official SignNow SDK using credentials from the environment configuration.

@@ -57,7 +57,7 @@ This flow mimics a scenario in which a document is prepared and sent programmati
 
 ## Configuration Notes
 
-- **Template ID**: `40d7a874baa043d881e3bc6bdab561445d64ad36`
+- **Template ID**: `76713f00c106425ea8b673c49fd94c0145643c34`
 - **Redirect URL**: Configured as `http://localhost:8080/samples/EmbeddedSenderWithoutFormFile?page=download-with-status&document_id={document_id}`.
 - **SignNow SDK**: Uses the official SignNow Java SDK; credentials should be configured appropriately.
 

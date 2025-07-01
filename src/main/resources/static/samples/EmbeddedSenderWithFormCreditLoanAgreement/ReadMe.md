@@ -65,7 +65,7 @@ The flow is suitable for business scenarios where a form-based agreement (e.g., 
 
 ## Configuration Notes
 
-- **Template ID**: Defined in the controller (e.g., `f8768c13d2f34774b6ce059e3008d9fc04d24378`).
+- **Template ID**: Defined in the controller (e.g., `de45a9a2a6014c2c8ac0a4d9057b17a2108e77e7`).
 - **Redirect URL**: Configured to point back to the status page with the document ID.
 - **SignNow SDK**: Uses the official SignNow Java SDK; credentials loaded from environment settings.
 

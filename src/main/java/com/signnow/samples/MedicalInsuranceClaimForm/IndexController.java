@@ -33,6 +33,8 @@ import java.util.Map;
 @Controller
 public class IndexController implements ExampleInterface {
 
+    private static final String TEMPLATE_ID = "60d8e92f12004fda8985d4574237507e6407530d";
+
     /**
      * Handles GET requests to the form or confirmation screen.
      * <p>
@@ -48,17 +50,8 @@ public class IndexController implements ExampleInterface {
      */
     @Override
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException, SignNowApiException, UnsupportedEncodingException {
-        String page = queryParams.get("page");
-        if (page == null || page.equals("finish")) {
-            String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/MedicalInsuranceClaimForm/index.html")));
-            return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
-        } else {
-            String templateId = "c78e902aa6834af6ba92e8a6f92b603108e1bbbb";
-            String link = createEmbeddedInviteAndReturnSigningLink(templateId, queryParams.get("full_name"), queryParams.get("email"));
-            return ResponseEntity.status(302)
-                    .header("Location", link)
-                    .build();
-        }
+        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/MedicalInsuranceClaimForm/index.html")));
+        return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
     }
 
     /**
@@ -74,7 +67,7 @@ public class IndexController implements ExampleInterface {
      * @throws SignNowApiException If any SignNow API call fails
      */
     @Override
-    public ResponseEntity<String> handlePost(String formData) throws IOException, SignNowApiException {
+    public ResponseEntity<?> handlePost(String formData) throws IOException, SignNowApiException {
         Map<String, String> data = new ObjectMapper().readValue(formData, Map.class);
         String action = data.get("action");
 
@@ -96,7 +89,7 @@ public class IndexController implements ExampleInterface {
             return ResponseEntity.ok()
                     .header("Content-Type", "application/pdf")
                     .header("Content-Disposition", "attachment; filename=\"result.pdf\"")
-                    .body(new String(file));
+                    .body(file);
         }
     }
 
@@ -134,7 +127,7 @@ public class IndexController implements ExampleInterface {
     }
 
     /**
-     * Clones a document template to create a new signable document. Скуфеу вщсгьуте акщт еуьздфеу
+     * Clones a document template to create a new signable document.
      *
      * @param client Authenticated SignNow API client
      * @param templateId ID of the template to clone
@@ -236,7 +229,7 @@ public class IndexController implements ExampleInterface {
      */
     private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {
         DocumentDownloadGetRequest downloadRequest = new DocumentDownloadGetRequest();
-        downloadRequest.withDocumentId(documentId);
+        downloadRequest.withDocumentId(documentId).withType("collapsed");
 
         DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadRequest).getResponse();
 

@@ -29,13 +29,14 @@ import java.util.Map;
 
 @Controller
 public class IndexController implements ExampleInterface {
+    private static final String TEMPLATE_ID = "de45a9a2a6014c2c8ac0a4d9057b17a2108e77e7";
 
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
         String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSenderWithFormCreditLoanAgreement/index.html")));
         return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
     }
 
-    public ResponseEntity<String> handlePost(String formData) throws IOException, SignNowApiException {
+    public ResponseEntity<?> handlePost(String formData) throws IOException, SignNowApiException {
         Map<String, String> data = new ObjectMapper().readValue(formData, Map.class);
         String action = data.get("action");
 
@@ -43,9 +44,8 @@ public class IndexController implements ExampleInterface {
 
         if ("create-embedded-invite".equals(action)) {
             String fullName = data.get("full_name");
-            String templateId = "f8768c13d2f34774b6ce059e3008d9fc04d24378";
 
-            String link = createEmbeddedInviteAndReturnSendingLink(client, templateId, fullName);
+            String link = createEmbeddedInviteAndReturnSendingLink(client, TEMPLATE_ID, fullName);
 
             return ResponseEntity.ok().body("{\"link\": \"" + link + "\"}");
         } else if ("invite-status".equals(action)) {
@@ -60,7 +60,7 @@ public class IndexController implements ExampleInterface {
         return ResponseEntity.ok()
                 .header("Content-Type", "application/pdf")
                 .header("Content-Disposition", "attachment; filename=\"result.pdf\"")
-                .body(new String(file));
+                .body(file);
     }
 
     private String createEmbeddedInviteAndReturnSendingLink(ApiClient client, String templateId, String fullName) throws SignNowApiException {
@@ -90,7 +90,7 @@ public class IndexController implements ExampleInterface {
     private String getEmbeddedSendingLink(ApiClient client, String documentId) throws SignNowApiException {
         String redirectUrl = "http://localhost:8080/samples/EmbeddedSenderWithFormCreditLoanAgreement?page=download-with-status&document_id=" + documentId;
 
-        DocumentEmbeddedSendingLinkPostRequest request = new DocumentEmbeddedSendingLinkPostRequest("document", redirectUrl, 16, "self");
+        DocumentEmbeddedSendingLinkPostRequest request = new DocumentEmbeddedSendingLinkPostRequest("invite", redirectUrl, 16, "self");
         request.withDocumentId(documentId);
 
         DocumentEmbeddedSendingLinkPostResponse response = (DocumentEmbeddedSendingLinkPostResponse) client.send(request).getResponse();
@@ -115,7 +115,7 @@ public class IndexController implements ExampleInterface {
 
     private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {
         DocumentDownloadGetRequest downloadRequest = new DocumentDownloadGetRequest();
-        downloadRequest.withDocumentId(documentId);
+        downloadRequest.withDocumentId(documentId).withType("collapsed");
 
         DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadRequest).getResponse();
 

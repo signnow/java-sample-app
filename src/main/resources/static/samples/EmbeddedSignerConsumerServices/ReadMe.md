@@ -45,7 +45,7 @@ The use case simulates a real-world scenario in the **consumer services** domain
 
     * The app:
 
-        * Clones the template (`da62bd76f1864e1fadff6251eca8152977ee3486`).
+        * Clones the template (`b6797f3437db4c818256560e4f68143cb99c7bc9`).
         * Retrieves the recipient role from the cloned document.
         * Sends an embedded invite.
         * Generates a secure signing link.
@@ -73,11 +73,11 @@ The use case simulates a real-world scenario in the **consumer services** domain
 
 ## Notes
 
-* Template ID used: `da62bd76f1864e1fadff6251eca8152977ee3486`.
+* Template ID used: `b6797f3437db4c818256560e4f68143cb99c7bc9`.
 * Template Name: **Veterinary Clinic Intake Form (Consumer Services)**.
 * The signer's email is currently hardcoded (`signer@example.com`).
 * All API interactions are handled via the official **SignNow Java SDK** using pre-authenticated credentials.
 
 ## Disclaimer
 
-This example is for demonstration purposes only. The embedded signing experience is based on static demo templates and should be adapted with custom logic and dynamic configuration for production use.
+This flow is designed for demonstration purposes. The embedded signing process relies on a static template and should be customized for production use.
