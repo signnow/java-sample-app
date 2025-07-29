@@ -27,7 +27,7 @@
         <url/>
     </scm>
     <properties>
-        <java.version>23</java.version>
+        <java.version>17</java.version>
     </properties>
     <dependencies>
         <dependency>
@@ -42,7 +42,9 @@
         <dependency>
             <groupId>com.signnow</groupId>
             <artifactId>signnow-java-sdk</artifactId>
-            <version>3.2.0</version>
+            <version>3.2.1</version>
+            <scope>system</scope>
+            <systemPath>/home/mikhail/IdeaProjects/java-sample-app/signnow-java-sdk-3.2.1.jar</systemPath>
         </dependency>
     </dependencies>
 
