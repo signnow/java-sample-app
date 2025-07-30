@@ -171,22 +171,32 @@ public class IndexController implements ExampleInterface {
     }
 
     private Map<String, Object> updateDocumentFields(ApiClient client, String documentGroupId, String name) throws SignNowApiException {
-        // Demo: Shows how to iterate through documents in a group and pre-fill fields
+        // Fetch group info to get each doc ID
         var docGroup = getDocumentGroup(client, documentGroupId);
 
+        // For each document in the group, check if that doc has the Name field. Then fill it if found.
         for (var docItem : docGroup.getDocuments()) {
             String docId = docItem.getId();
             var documentData = getDocument(client, docId);
 
-            // Demo: Extract field names from document structure
-            List<String> existingFields = extractFieldNames(documentData);
+            // Extract existing field names from document structure
+            List<String> existingFields = new LinkedList<>();
+            for (var field : documentData.getFields()) {
+                String fieldName = extractFieldName(field);
+                if (fieldName != null) {
+                    existingFields.add(fieldName);
+                }
+            }
 
-            // Demo: Pre-fill customer name field
+            // Build a field collection with only valid fields
             FieldCollection fieldValues = new FieldCollection();
+
+            // Try to fill "Name" field if it exists
             if (existingFields.contains("Name")) {
                 fieldValues.add(new Field("Name", name));
             }
 
+            // If there are any fields to fill, send the request
             if (!fieldValues.isEmpty()) {
                 var prefillRequest = new DocumentPrefillPutRequest(fieldValues);
                 prefillRequest.withDocumentId(docId);
@@ -199,18 +209,7 @@ public class IndexController implements ExampleInterface {
         return result;
     }
 
-    private List<String> extractFieldNames(DocumentGetResponse documentData) {
-        List<String> fieldNames = new LinkedList<>();
-        
-        for (var field : documentData.getFields()) {
-            String fieldName = extractFieldName(field);
-            if (fieldName != null) {
-                fieldNames.add(fieldName);
-            }
-        }
-        
-        return fieldNames;
-    }
+
 
     private String extractFieldName(Object field) {
         Map<String, Object> fieldMap = (Map<String, Object>) field;
@@ -231,17 +230,17 @@ public class IndexController implements ExampleInterface {
         String customerEmail,
         String preparerEmail
     ) throws SignNowApiException {
-        // Demo: Get current recipients from document group
+        // Get current recipients
         var recipientsResponse = getDocumentGroupRecipients(client, documentGroupId);
         var currentRecipients = recipientsResponse.getData().getRecipients();
 
-        // Demo: Create updated recipients with different email addresses based on role
+        // Create updated recipients with customer email for all roles
         List<com.signnow.api.documentgroup.request.data.recipient.Recipient> updatedRecipients = new LinkedList<>();
         
         for (var recipient : currentRecipients) {
             String recipientName = recipient.getName();
 
-            // Demo: Convert Response DocumentCollection to Request DocumentCollection
+            // Convert Response DocumentCollection to Request DocumentCollection
             List<com.signnow.api.documentgroup.request.data.recipient.Document> requestDocuments = new LinkedList<>();
             for (var document : recipient.getDocuments()) {
                 requestDocuments.add(new com.signnow.api.documentgroup.request.data.recipient.Document(
@@ -251,17 +250,35 @@ public class IndexController implements ExampleInterface {
             var requestDocumentCollection = new com.signnow.api.documentgroup.request.data.recipient.DocumentCollection();
             requestDocuments.forEach(requestDocumentCollection::add);
 
-            // Demo: Assign email based on recipient role/name
-            String emailToUse = getEmailForRole(recipientName, customerEmail, preparerEmail);
-
-            updatedRecipients.add(new com.signnow.api.documentgroup.request.data.recipient.Recipient(
-                recipientName,
-                emailToUse,
-                recipient.getOrder(),
-                requestDocumentCollection,
-                null,
-                null
-            ));
+            // Assign email based on recipient role/name
+            if ("Recipient 1".equals(recipientName)) {
+                updatedRecipients.add(new com.signnow.api.documentgroup.request.data.recipient.Recipient(
+                    recipientName,
+                    preparerEmail,
+                    recipient.getOrder(),
+                    requestDocumentCollection,
+                    null,
+                    null
+                ));
+            } else if ("Recipient 2".equals(recipientName)) {
+                updatedRecipients.add(new com.signnow.api.documentgroup.request.data.recipient.Recipient(
+                    recipientName,
+                    customerEmail,
+                    recipient.getOrder(),
+                    requestDocumentCollection,
+                    null,
+                    null
+                ));
+            } else {
+                updatedRecipients.add(new com.signnow.api.documentgroup.request.data.recipient.Recipient(
+                    recipientName,
+                    "", // Empty email for other recipients
+                    recipient.getOrder(),
+                    requestDocumentCollection,
+                    null,
+                    null
+                ));
+            }
         }
 
         var recipientsCollection = new com.signnow.api.documentgroup.request.data.recipient.RecipientCollection();
@@ -281,15 +298,7 @@ public class IndexController implements ExampleInterface {
         return result;
     }
 
-    private String getEmailForRole(String recipientName, String customerEmail, String preparerEmail) {
-        if ("Recipient 1".equals(recipientName)) {
-            return preparerEmail;
-        } else if ("Recipient 2".equals(recipientName)) {
-            return customerEmail;
-        } else {
-            return ""; // Empty email for other recipients
-        }
-    }
+
 
     private Map<String, Object> createEmbeddedSendingUrl(ApiClient client, String documentGroupId) throws SignNowApiException {
         // Demo: Create embedded sending URL with redirect back to status page
