@@ -40,12 +40,10 @@ import java.util.Map;
 public class IndexController implements ExampleInterface {
 
     // Demo configuration - in production, these would come from environment/config
-    private static final String DOCUMENT_GROUP_TEMPLATE_ID = "8e36720a436041ea837dc543ec00a3bc3559df45";
+    private static final String DOCUMENT_GROUP_TEMPLATE_ID = "c8040bbc40804b89b63a0fa8c79b42a7ae4818c1";
     private static final String USER_EMAIL = "example@example.com"; // Demo user
 
     // Demo field names that might exist in templates
-    private static final String CUSTOMER_NAME_FIELD = "CustomerName";
-    private static final String CUSTOMER_FN_FIELD = "CustomerFN";
 
     // Demo recipient roles
     private static final String PREPARE_CONTRACT_ROLE = "Prepare Contract";
@@ -183,12 +181,10 @@ public class IndexController implements ExampleInterface {
             // Demo: Extract field names from document structure
             List<String> existingFields = extractFieldNames(documentData);
 
-            // Demo: Pre-fill customer name field (supports multiple field name variations)
+            // Demo: Pre-fill customer name field
             FieldCollection fieldValues = new FieldCollection();
-            if (existingFields.contains(CUSTOMER_NAME_FIELD)) {
-                fieldValues.add(new Field(CUSTOMER_NAME_FIELD, name));
-            } else if (existingFields.contains(CUSTOMER_FN_FIELD)) {
-                fieldValues.add(new Field(CUSTOMER_FN_FIELD, name));
+            if (existingFields.contains("Name")) {
+                fieldValues.add(new Field("Name", name));
             }
 
             if (!fieldValues.isEmpty()) {
@@ -286,13 +282,12 @@ public class IndexController implements ExampleInterface {
     }
 
     private String getEmailForRole(String recipientName, String customerEmail, String preparerEmail) {
-        switch (recipientName) {
-            case PREPARE_CONTRACT_ROLE:
-                return preparerEmail;
-            case CUSTOMER_SIGN_ROLE:
-                return customerEmail;
-            default:
-                return customerEmail; // default fallback
+        if ("Recipient 1".equals(recipientName)) {
+            return preparerEmail;
+        } else if ("Recipient 2".equals(recipientName)) {
+            return customerEmail;
+        } else {
+            return ""; // Empty email for other recipients
         }
     }
 
