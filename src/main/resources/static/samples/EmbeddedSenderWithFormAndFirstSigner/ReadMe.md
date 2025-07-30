@@ -1,10 +1,10 @@
-# ISV With Form And One Click Send
+# Embedded Sender With Form And First Signer
 
-This sample demonstrates how to create a complete document signing workflow for ISV (Independent Software Vendor) applications using SignNow Java SDK. The sample shows how to collect user information through a custom form, create a document group from a template, populate fields with user data, send the document for signing using embedded sending, and then proceed to signing with limited token authentication.
+This sample demonstrates how to create a complete document signing workflow with embedded sender experience using SignNow Java SDK. The sample shows how to collect user information through a custom form, create a document group from a template, populate fields with user data, send the document for signing using embedded sending, and then proceed to signing with limited token authentication.
 
 ## Use Case Overview
 
-This sample addresses the common ISV requirement of integrating electronic signature capabilities into existing business applications. It demonstrates a streamlined workflow where:
+This sample addresses the common requirement of integrating electronic signature capabilities into existing business applications with embedded sender experience. It demonstrates a streamlined workflow where:
 
 - Users fill out a simple form with their information
 - The system automatically creates a document group from a template
@@ -13,7 +13,7 @@ This sample addresses the common ISV requirement of integrating electronic signa
 - Users proceed to signing with limited token authentication
 - Users can track the status and download completed documents
 
-This approach is ideal for ISVs who want to provide seamless document signing experiences within their applications without requiring users to leave their platform.
+This approach is ideal for applications that want to provide seamless document signing experiences within their platform using embedded sender functionality.
 
 ## Demo Application Features
 
@@ -108,7 +108,7 @@ Form Page → Embedded Sending → Signing Page → Embedded Signing → Status 
 
 1. **Frontend Form Submission**
    - `initFormPage()` → Form validation
-   - `fetch('/api/samples/ISVWithFormAndOneClickSend')` → POST with action: 'prepare_dg'
+   - `fetch('/api/samples/EmbeddedSenderWithFormAndFirstSigner')` → POST with action: 'prepare_dg'
 
 2. **Backend Document Preparation**
    - `prepareDocumentGroup()` → Main orchestration
@@ -124,7 +124,7 @@ Form Page → Embedded Sending → Signing Page → Embedded Signing → Status 
 
 4. **Frontend Signing Page**
    - `initSigningPage()` → Page initialization
-   - `fetch('/api/samples/ISVWithFormAndOneClickSend')` → POST with action: 'create_signing_url'
+   - `fetch('/api/samples/EmbeddedSenderWithFormAndFirstSigner')` → POST with action: 'create_signing_url'
 
 5. **Backend Signing URL Creation**
    - `createSigningUrl()` → Handle signing URL request
@@ -138,7 +138,7 @@ Form Page → Embedded Sending → Signing Page → Embedded Signing → Status 
 
 7. **Frontend Status Tracking**
    - `initStatusPage()` → Status page initialization
-   - `fetch('/api/samples/ISVWithFormAndOneClickSend')` → POST with action: 'invite-status'
+   - `fetch('/api/samples/EmbeddedSenderWithFormAndFirstSigner')` → POST with action: 'invite-status'
 
 8. **Backend Status Management**
    - `getInviteStatus()` → Handle invite status request
@@ -220,7 +220,7 @@ SIGNNOW_PASSWORD=your_password
 ```java
 // Demo: Create document group directly from Document Group Template
 var request = new DocumentGroupTemplatePostRequest(
-    "ISV Form Document Group", null, null
+    "Embedded Sender Form Document Group", null, null
 );
 request.withTemplateGroupId(DOCUMENT_GROUP_TEMPLATE_ID);
 

@@ -1,4 +1,4 @@
-package com.signnow.samples.ISVWithFormAndOneClickSend;
+package com.signnow.samples.EmbeddedSenderWithFormAndFirstSigner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.signnow.Sdk;
@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Demo controller showing ISV (Independent Software Vendor) integration
- * with SignNow API for document group templates and embedded signing.
+ * Demo controller showing embedded sender integration with SignNow API
+ * for document group templates and embedded signing with first signer workflow.
  * 
  * Features demonstrated:
  * - Creating document groups from templates
@@ -34,7 +34,7 @@ import java.util.Map;
  * - Status tracking and document download
  * 
  * This is a demonstration application showing how to integrate SignNow API
- * into your application for document signing workflows.
+ * into your application for document signing workflows with embedded sender experience.
  */
 @Controller
 public class IndexController implements ExampleInterface {
@@ -53,13 +53,13 @@ public class IndexController implements ExampleInterface {
     private static final String CUSTOMER_SIGN_ROLE = "Customer to Sign";
 
     // Demo URL constants
-    private static final String REDIRECT_BASE_URL = "http://localhost:8080/samples/ISVWithFormAndOneClickSend";
+    private static final String REDIRECT_BASE_URL = "http://localhost:8080/samples/EmbeddedSenderWithFormAndFirstSigner";
     private static final String SIGNING_URL_BASE = "https://app.signnow.com/webapp/documentgroup/signing";
 
     @Override
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
         // Demo: Simple HTML page serving
-        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/ISVWithFormAndOneClickSend/index.html")));
+        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSenderWithFormAndFirstSigner/index.html")));
         
         // Demo: Add query parameters to show different demo pages
         String page = queryParams.get("page");
@@ -178,7 +178,7 @@ public class IndexController implements ExampleInterface {
     private Map<String, Object> createDocumentGroupFromTemplate(ApiClient client) throws SignNowApiException {
         // Demo: Create document group directly from Document Group Template
         var request = new com.signnow.api.documentgrouptemplate.request.DocumentGroupTemplatePostRequest(
-            "ISV Form Document Group", null, null
+            "Embedded Sender Form Document Group", null, null
         );
         request.withTemplateGroupId(DOCUMENT_GROUP_TEMPLATE_ID);
 
@@ -468,4 +468,4 @@ public class IndexController implements ExampleInterface {
         return (com.signnow.api.documentgroup.response.DocumentGroupRecipientsGetResponse) 
             client.send(recipientsRequest).getResponse();
     }
-}
+} 
