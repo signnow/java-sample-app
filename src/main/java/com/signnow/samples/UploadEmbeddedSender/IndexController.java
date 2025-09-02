@@ -23,6 +23,7 @@ import com.signnow.javasampleapp.ExampleInterface;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -236,6 +237,19 @@ public class IndexController implements ExampleInterface {
     private ResponseEntity<?> downloadDocumentGroup(Map<String, Object> data, ApiClient client) throws SignNowApiException, IOException {
         String documentGroupId = (String) data.get("document_group_id");
         
+        File file = downloadDocumentGroupFile(client, documentGroupId);
+        
+        String filename = file.getName();
+        byte[] content = Files.readAllBytes(file.toPath());
+        file.delete();
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/pdf")
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .body(content);
+    }
+
+    private File downloadDocumentGroupFile(ApiClient client, String documentGroupId) throws SignNowApiException {
         var orderColl = new com.signnow.api.documentgroup.request.data.DocumentOrderCollection();
         DownloadDocumentGroupPostRequest downloadRequest = new DownloadDocumentGroupPostRequest(
                 "merged",
@@ -245,14 +259,6 @@ public class IndexController implements ExampleInterface {
 
         DownloadDocumentGroupPostResponse response = (DownloadDocumentGroupPostResponse) client.send(downloadRequest).getResponse();
 
-        // Get the actual filename from the downloaded file
-        String filename = response.getFile().getName();
-        byte[] content = Files.readAllBytes(response.getFile().toPath());
-        response.getFile().delete();
-
-        return ResponseEntity.ok()
-                .header("Content-Type", "application/pdf")
-                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-                .body(content);
+        return response.getFile();
     }
 } 

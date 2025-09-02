@@ -15,6 +15,7 @@ import com.signnow.javasampleapp.ExampleInterface;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
@@ -145,6 +146,19 @@ public class IndexController implements ExampleInterface {
             return ResponseEntity.badRequest().body(errorResponse);
         }
 
+        File file = downloadDocumentGroupFile(client, documentGroupId);
+        
+        String filename = file.getName();
+        byte[] content = Files.readAllBytes(file.toPath());
+        file.delete();
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/pdf")
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .body(content);
+    }
+
+    private File downloadDocumentGroupFile(ApiClient client, String documentGroupId) throws SignNowApiException {
         var orderColl = new com.signnow.api.documentgroup.request.data.DocumentOrderCollection();
         var downloadRequest = new com.signnow.api.documentgroup.request.DownloadDocumentGroupPostRequest(
             "merged", "no", orderColl
@@ -153,15 +167,7 @@ public class IndexController implements ExampleInterface {
         var response = (com.signnow.api.documentgroup.response.DownloadDocumentGroupPostResponse) 
             client.send(downloadRequest).getResponse();
 
-        // Get the actual filename from the downloaded file
-        String filename = response.getFile().getName();
-        byte[] content = Files.readAllBytes(response.getFile().toPath());
-        response.getFile().delete();
-
-        return ResponseEntity.ok()
-                .header("Content-Type", "application/pdf")
-                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-                .body(content);
+        return response.getFile();
     }
 
     private Map<String, Object> createDocumentGroupFromTemplate(ApiClient client) throws SignNowApiException {
