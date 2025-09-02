@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Embedded Sender With Form And First Signer - SignNow Sample</title>
+    <title>ISV With Form And One Click Send - SignNow Sample</title>
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/styles.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
@@ -100,7 +100,7 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const formData = new FormData(form);
             const data = {
                 action: 'prepare_dg',
@@ -114,9 +114,7 @@
             try {
                 const response = await fetch('/api/samples/EmbeddedSenderWithFormAndFirstSigner', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
 
@@ -126,13 +124,12 @@
                     // Redirect to embedded sending URL
                     window.location.href = result.embedded_url;
                 } else {
-                    alert('Error: ' + result.message);
-                    submitBtn.classList.remove('d-none');
-                    loadingBtn.classList.add('d-none');
+                    alert('Error: ' + (result.message || 'Failed to prepare document group'));
                 }
             } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred while processing your request.');
+                alert('Error: ' + error.message);
+                console.error(error);
+            } finally {
                 submitBtn.classList.remove('d-none');
                 loadingBtn.classList.add('d-none');
             }
@@ -140,20 +137,23 @@
     }
 
     async function initSigningPage() {
+        const signingContent = document.getElementById('signing-content');
         const documentGroupId = getQueryParam('document_group_id');
-        
+
         if (!documentGroupId) {
-            document.getElementById('signing-content').innerHTML = 
-                '<div class="alert alert-danger">No document group ID provided.</div>';
+            signingContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        Error: Document group ID not found
+                    </div>
+                `;
             return;
         }
 
         try {
+            // Create signing URL
             const response = await fetch('/api/samples/EmbeddedSenderWithFormAndFirstSigner', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'create_signing_url',
                     document_group_id: documentGroupId
@@ -166,160 +166,141 @@
                 // Redirect to signing URL
                 window.location.href = result.signing_url;
             } else {
-                document.getElementById('signing-content').innerHTML = 
-                    '<div class="alert alert-danger">Error: ' + result.message + '</div>';
+                signingContent.innerHTML = `
+                        <div class="alert alert-danger">
+                            Error: ${result.message || 'Failed to create signing URL'}
+                        </div>
+                    `;
             }
         } catch (error) {
-            console.error('Error:', error);
-            document.getElementById('signing-content').innerHTML = 
-                '<div class="alert alert-danger">An error occurred while preparing the signing interface.</div>';
+            signingContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        Error: ${error.message}
+                    </div>
+                `;
         }
     }
 
     async function initStatusPage() {
+        // Notify parent that sample is finished
+        parent.postMessage({type: "SAMPLE_APP_FINISHED"}, location.origin);
+
         const documentGroupId = getQueryParam('document_group_id');
-        
         if (!documentGroupId) {
-            document.getElementById('status-page').innerHTML = 
-                '<div class="alert alert-danger">No document group ID provided.</div>';
+            document.getElementById('status-page').innerHTML = '<p>No Document Group ID provided.</p>';
             return;
         }
 
-        try {
-            const response = await fetch('/api/samples/EmbeddedSenderWithFormAndFirstSigner', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'invite-status',
-                    document_group_id: documentGroupId
-                })
-            });
-
-            const signers = await response.json();
-            displaySigners(signers, documentGroupId);
-        } catch (error) {
-            console.error('Error:', error);
-            document.getElementById('status-page').innerHTML = 
-                '<div class="alert alert-danger">An error occurred while loading the status.</div>';
-        }
-    }
-
-    function displaySigners(signers, documentGroupId) {
         const documentList = document.getElementById('documentList');
         const noRecipientsContainer = document.getElementById('no-recipients-container');
 
-        if (!signers || signers.length === 0) {
-            noRecipientsContainer.style.display = 'block';
-            documentList.innerHTML = '';
-            return;
-        }
+        // Update statuses and render the list
+        async function updateStatuses() {
+            try {
+                const response = await fetch('/api/samples/EmbeddedSenderWithFormAndFirstSigner', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'invite-status',
+                        document_group_id: documentGroupId
+                    })
+                });
 
-        noRecipientsContainer.style.display = 'none';
-        
-        let html = '';
-        signers.forEach((signer, index) => {
-            const statusClass = getStatusClass(signer.status);
-            const statusText = getStatusText(signer.status);
-            
-            html += `
-                <li class="status-item">
-                    <div class="status-header">
-                        <span class="signer-name">${signer.name}</span>
-                        <span class="status-badge ${statusClass}">${statusText}</span>
-                    </div>
-                    <div class="signer-details">
-                        <p><strong>Email:</strong> ${signer.email}</p>
-                        <p><strong>Order:</strong> ${signer.order}</p>
-                        ${signer.timestamp ? `<p><strong>Signed:</strong> ${new Date(signer.timestamp).toLocaleString()}</p>` : ''}
-                    </div>
-                </li>
-            `;
-        });
+                if (!response.ok) throw new Error('Failed to fetch invite statuses.');
 
-        // Add download button if any signer has completed
-        const hasCompleted = signers.some(signer => signer.status === 'completed');
-        if (hasCompleted) {
-            html += `
-                <li class="status-item">
-                    <div class="download-section">
-                        <button class="btn btn-primary" onclick="downloadDocument('${documentGroupId}')">
-                            Download Completed Document
-                        </button>
-                    </div>
-                </li>
-            `;
-        }
+                const data = await response.json();
 
-        documentList.innerHTML = html;
-    }
+                documentList.innerHTML = '';
+                noRecipientsContainer.style.display = 'none';
 
-    function getStatusClass(status) {
-        switch (status) {
-            case 'completed': return 'status-completed';
-            case 'pending': return 'status-pending';
-            case 'not_invited': return 'status-not-invited';
-            default: return 'status-unknown';
-        }
-    }
+                if (Array.isArray(data) && data.length > 0) {
+                    data.forEach(doc => {
+                        const li = document.createElement('li');
+                        li.className = 'status-item';
+                        li.innerHTML = `
+                                <div class="status-wrapper">
+                                    <div class="status-info">
+                                        <strong>${doc.name}</strong>
+                                        <span class="status-date">${doc.timestamp || ''}</span>
+                                    </div>
+                                </div>
+                                <div class="status-container">
+                                    <div class="status-badge">&#9679; <span>${doc.status}</span></div>
+                                </div>
+                                <div>
+                                    <button class="button-outlined download-document">Download Document</button>
+                                    <button class="button-outlined refresh-status">Refresh</button>
+                                    <button class="btn btn-dark d-none loading-button" type="button" disabled>
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        Refresh
+                                    </button>
+                                </div>
+                            `;
 
-    function getStatusText(status) {
-        switch (status) {
-            case 'completed': return 'Completed';
-            case 'pending': return 'Pending';
-            case 'not_invited': return 'Not Invited';
-            default: return 'Unknown';
-        }
-    }
+                        li.querySelector('.download-document').addEventListener('click', async () => {
+                            try {
+                                const res = await fetch('/api/samples/EmbeddedSenderWithFormAndFirstSigner', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        document_group_id: documentGroupId,
+                                        action: 'download-doc-group'
+                                    })
+                                });
 
-    async function downloadDocument(documentGroupId) {
-        try {
-            const response = await fetch('/api/samples/EmbeddedSenderWithFormAndFirstSigner', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'download-doc-group',
-                    document_group_id: documentGroupId
-                })
-            });
+                                if (!res.ok) throw new Error();
 
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'completed_document.pdf';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            } else {
-                alert('Error downloading document');
+                                const blob = await res.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                Object.assign(document.createElement('a'), {
+                                    href: url,
+                                    download: 'document_group.pdf'
+                                }).click();
+                                window.URL.revokeObjectURL(url);
+                            } catch {
+                                alert('Error downloading the document.');
+                            }
+                        });
+
+                        li.querySelector('.refresh-status').addEventListener('click', async () => {
+                            const refreshButton = li.querySelector('.refresh-status');
+                            const loadingButton = li.querySelector('.loading-button');
+
+                            refreshButton.classList.add('d-none');
+                            loadingButton.classList.remove('d-none');
+
+                            try {
+                                await updateStatuses();
+                            } catch (err) {
+                                alert('Failed to refresh status.');
+                            } finally {
+                                refreshButton.classList.remove('d-none');
+                                loadingButton.classList.add('d-none');
+                            }
+                        });
+
+                        documentList.appendChild(li);
+                    });
+                    return;
+                }
+
+                noRecipientsContainer.style.display = 'block';
+            } catch (err) {
+                console.error(err);
+                alert('Something went wrong while updating statuses.');
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred while downloading the document.');
         }
+
+        await updateStatuses();
     }
 
-    // Initialize pages
-    document.addEventListener('DOMContentLoaded', () => {
-        handlePages({
+    document.addEventListener('DOMContentLoaded', async () => {
+        await handlePages({
             'form-page': initFormPage,
             'signing-page': initSigningPage,
             'status-page': initStatusPage
         }, 'form-page');
     });
-
-    // Notify parent application when workflow is complete
-    window.addEventListener('load', () => {
-        if (window.parent !== window) {
-            parent.postMessage({type: "SAMPLE_APP_FINISHED"}, location.origin);
-        }
-    });
 </script>
 </body>
-</html> 
+</html>

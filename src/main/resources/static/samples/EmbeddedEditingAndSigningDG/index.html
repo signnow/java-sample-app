@@ -74,7 +74,7 @@
 <div id="page4-status-download" class="container-block" style="display: none;">
     <h4>Page 4: Send Status & Final Document</h4>
     <p>You can check signing status and download the completed document here.</p>
-    
+
     <div id="no-recipients-container" class="no-recipients" style="display: none;">
         <div class="thank-you-message">
             <img src="/img/no-recipients.svg" alt="signNow" class="mb-3" />
@@ -84,7 +84,7 @@
             </p>
         </div>
     </div>
-    
+
     <ul class="status-list" id="documentList"></ul>
 </div>
 
@@ -164,7 +164,7 @@
     async function initPage2() {
         const docGroupId = getQueryParam('document_group_id');
         const loadingBtn = document.getElementById('loading-signing-btn');
-        
+
         if (!docGroupId) {
             alert('Missing Document Group ID');
             return;
@@ -183,12 +183,12 @@
                     document_group_id: docGroupId
                 })
             });
-            
+
             if (!response.ok) throw new Error('Failed to create embedded signing session');
-            
+
             const data = await response.json();
             const signingLink = data.signing_link;
-            
+
             if (signingLink) {
                 // Redirect to signing link
                 window.location.href = signingLink;
@@ -242,12 +242,15 @@
      * Page 4 logic: Show status list with signers and download options
      */
     async function initPage4() {
+        // Notify parent that sample is finished
+        parent.postMessage({type: "SAMPLE_APP_FINISHED"}, location.origin);
+
         const docGroupId = getQueryParam('document_group_id');
         if (!docGroupId) {
             document.getElementById('page4-status-download').innerHTML = '<p>No Document Group ID provided.</p>';
             return;
         }
-        
+
         const documentList = document.getElementById('documentList');
         const noRecipientsContainer = document.getElementById('no-recipients-container');
 
@@ -309,9 +312,9 @@
 
                                 const blob = await res.blob();
                                 const url = window.URL.createObjectURL(blob);
-                                Object.assign(document.createElement('a'), { 
-                                    href: url, 
-                                    download: 'document_group.pdf' 
+                                Object.assign(document.createElement('a'), {
+                                    href: url,
+                                    download: 'document_group.pdf'
                                 }).click();
                                 window.URL.revokeObjectURL(url);
                             } catch {
