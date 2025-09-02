@@ -50,8 +50,13 @@ public class IndexController implements ExampleInterface {
      */
     @Override
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException, SignNowApiException, UnsupportedEncodingException {
-        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/MedicalInsuranceClaimForm/index.html")));
-        return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+        try (var inputStream = getClass().getResourceAsStream("/static/samples/MedicalInsuranceClaimForm/index.html")) {
+            if (inputStream == null) {
+                throw new IOException("HTML file not found in classpath");
+            }
+            String html = new String(inputStream.readAllBytes());
+            return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+        }
     }
 
     /**

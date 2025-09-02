@@ -34,8 +34,13 @@ public class IndexController implements ExampleInterface {
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException, SignNowApiException {
         String page = queryParams.get("page");
         if ("download-container".equals(page)) {
-            String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSignerConsentForm/index.html")));
-            return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+            try (var inputStream = getClass().getResourceAsStream("/static/samples/EmbeddedSignerConsentForm/index.html")) {
+                if (inputStream == null) {
+                    throw new IOException("HTML file not found in classpath");
+                }
+                String html = new String(inputStream.readAllBytes());
+                return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+            }
         } else {
             ApiClient client = new Sdk().build().authenticate().getApiClient();
             String link = createEmbeddedSenderAndReturnSigningLink(client, TEMPLATE_ID);

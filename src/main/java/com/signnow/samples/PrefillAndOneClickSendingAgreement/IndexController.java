@@ -32,8 +32,13 @@ public class IndexController implements ExampleInterface {
     private static final String TEMPLATE_ID = "e30d6e58c82d43f598e365420f3c665a048a7d81";
 
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
-        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/PrefillAndOneClickSendingAgreement/index.html")));
-        return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+        try (var inputStream = getClass().getResourceAsStream("/static/samples/PrefillAndOneClickSendingAgreement/index.html")) {
+            if (inputStream == null) {
+                throw new IOException("HTML file not found in classpath");
+            }
+            String html = new String(inputStream.readAllBytes());
+            return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+        }
     }
 
     public ResponseEntity<?> handlePost(String formData) throws IOException, SignNowApiException {

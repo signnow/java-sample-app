@@ -193,7 +193,7 @@
 
                                             const blob = await res.blob();
                                             const url = window.URL.createObjectURL(blob);
-                                            Object.assign(document.createElement('a'), { href: url, download: 'document.pdf' }).click();
+                                            Object.assign(document.createElement('a'), { href: url, download: 'Credit Loan Agreement.pdf' }).click();
                                             window.URL.revokeObjectURL(url);
                                         } catch {
                                             alert('Error downloading the document.');

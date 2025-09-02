@@ -34,8 +34,13 @@ public class IndexController implements ExampleInterface {
         ApiClient client = new Sdk().build().authenticate().getApiClient();
 
         if ("download-with-status".equals(page)) {
-            String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSenderWithoutFormFile/index.html")));
-            return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+            try (var inputStream = getClass().getResourceAsStream("/static/samples/EmbeddedSenderWithoutFormFile/index.html")) {
+                if (inputStream == null) {
+                    throw new IOException("HTML file not found in classpath");
+                }
+                String html = new String(inputStream.readAllBytes());
+                return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+            }
         }
 
         String link = getEmbeddedSendingLink(client);

@@ -287,11 +287,14 @@
             });
 
             if (response.ok) {
+                // Extract filename from Content-Disposition header
+                const filename = response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || 'Embedded_Sender_Form_Document_Group.pdf';
+
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'completed_document.pdf';
+                a.download = filename;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);

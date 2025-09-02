@@ -191,9 +191,12 @@
 
                                     const blob = await res.blob();
                                     const url = window.URL.createObjectURL(blob);
+                                    // Extract filename from Content-Disposition header
+                                    const filename = res.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || 'ISV_Form_Document_Group.pdf';
+                                    
                                     Object.assign(document.createElement('a'), { 
                                         href: url, 
-                                        download: 'document_group.pdf' 
+                                        download: filename
                                     }).click();
                                     window.URL.revokeObjectURL(url);
                                     
