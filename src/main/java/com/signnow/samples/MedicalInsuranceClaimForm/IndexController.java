@@ -26,6 +26,7 @@ import org.springframework.stereotype.Controller;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -89,12 +90,16 @@ public class IndexController implements ExampleInterface {
             return ResponseEntity.ok().body("{\"link\": \"" + link + "\"}");
         } else {
             String documentId = data.get("document_id");
-            byte[] file = downloadDocument(client, documentId);
+            File file = downloadDocumentWithFilename(client, documentId);
+            
+            String filename = file.getName();
+            byte[] content = Files.readAllBytes(file.toPath());
+            file.delete();
 
             return ResponseEntity.ok()
                     .header("Content-Type", "application/pdf")
-                    .header("Content-Disposition", "attachment; filename=\"result.pdf\"")
-                    .body(file);
+                    .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                    .body(content);
         }
     }
 
@@ -232,15 +237,13 @@ public class IndexController implements ExampleInterface {
      * @return PDF file content as byte array
      * @throws SignNowApiException If download fails
      */
-    private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {
+    private File downloadDocumentWithFilename(ApiClient client, String documentId) throws SignNowApiException, IOException {
         DocumentDownloadGetRequest downloadRequest = new DocumentDownloadGetRequest();
         downloadRequest.withDocumentId(documentId).withType("collapsed");
 
         DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadRequest).getResponse();
 
-        byte[] fileBytes = Files.readAllBytes(response.getFile().toPath());
-        response.getFile().delete();
-        return fileBytes;
+        return response.getFile();
     }
 
     /**

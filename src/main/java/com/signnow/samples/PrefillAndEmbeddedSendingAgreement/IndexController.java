@@ -19,6 +19,7 @@ import org.springframework.stereotype.Controller;
 import com.signnow.api.document.response.DocumentDownloadGetResponse;
 import com.signnow.api.document.request.DocumentDownloadGetRequest;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -59,12 +60,16 @@ public class IndexController implements ExampleInterface {
         }
 
         String documentId = data.get("document_id");
-        byte[] file = downloadDocument(client, documentId);
+        File file = downloadDocumentFile(client, documentId);
+        
+        String filename = file.getName();
+        byte[] content = Files.readAllBytes(file.toPath());
+        file.delete();
 
         return ResponseEntity.ok()
                 .header("Content-Type", "application/pdf")
-                .header("Content-Disposition", "attachment; filename=\"signed_document.pdf\"")
-                .body(file);
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .body(content);
     }
 
     private String createEmbeddedInviteAndReturnSendingLink(ApiClient client, String templateId, String name) throws SignNowApiException {
@@ -117,14 +122,12 @@ public class IndexController implements ExampleInterface {
         return statuses;
     }
 
-    private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {
+    private File downloadDocumentFile(ApiClient client, String documentId) throws SignNowApiException, IOException {
         DocumentDownloadGetRequest downloadRequest = new DocumentDownloadGetRequest();
         downloadRequest.withDocumentId(documentId).withType("collapsed");
 
         DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadRequest).getResponse();
 
-        byte[] fileBytes = Files.readAllBytes(response.getFile().toPath());
-        response.getFile().delete();
-        return fileBytes;
+        return response.getFile();
     }
 }
