@@ -22,6 +22,7 @@ import com.signnow.javasampleapp.ExampleInterface;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
@@ -50,8 +51,13 @@ public class IndexController implements ExampleInterface {
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException, SignNowApiException, UnsupportedEncodingException {
         String page = queryParams.get("page");
         if ("download-container".equals(page)) {
-            String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSignerPatientIntakeForm/index.html")));
-            return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+            try (var inputStream = getClass().getResourceAsStream("/static/samples/EmbeddedSignerPatientIntakeForm/index.html")) {
+                if (inputStream == null) {
+                    throw new IOException("HTML file not found in classpath");
+                }
+                String html = new String(inputStream.readAllBytes());
+                return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+            }
         } else {
             String link = createEmbeddedInviteAndReturnSigningLink(TEMPLATE_ID);
             return ResponseEntity.status(302)
@@ -79,12 +85,16 @@ public class IndexController implements ExampleInterface {
         Sdk sdk = new Sdk();
         ApiClient client = sdk.build().authenticate().getApiClient();
 
-        byte[] file = downloadDocument(client, documentId);
+        File file = downloadDocumentFile(client, documentId);
+        
+        String filename = file.getName();
+        byte[] content = Files.readAllBytes(file.toPath());
+        file.delete();
 
         return ResponseEntity.ok()
                 .header("Content-Type", "application/pdf")
-                .header("Content-Disposition", "attachment; filename=\"result.pdf\"")
-                .body(file);
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .body(content);
     }
 
     /**
@@ -215,14 +225,12 @@ public class IndexController implements ExampleInterface {
      * @return Byte array of the signed PDF
      * @throws SignNowApiException if document download fails
      */
-    private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {
+    private File downloadDocumentFile(ApiClient client, String documentId) throws SignNowApiException, IOException {
         DocumentDownloadGetRequest downloadRequest = new DocumentDownloadGetRequest();
         downloadRequest.withDocumentId(documentId).withType("collapsed");
 
         DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadRequest).getResponse();
 
-        byte[] fileBytes = Files.readAllBytes(response.getFile().toPath());
-        response.getFile().delete();
-        return fileBytes;
+        return response.getFile();
     }
 }

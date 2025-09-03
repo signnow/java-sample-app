@@ -32,9 +32,9 @@ import com.signnow.javasampleapp.ExampleInterface;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,17 +77,22 @@ public class IndexController implements ExampleInterface {
 
     @Override
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
-        // Demo: Simple HTML page serving
-        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/HROnboardingSystem/index.html")));
-        
-        // Demo: Add query parameters to show different demo pages
-        String page = queryParams.get("page");
-        if (page != null) {
-            html = html.replace("<!-- DEMO_PAGE_CONTENT -->", 
-                "<div class='demo-note'>Showing demo page: " + page + "</div>");
+        // Demo: Simple HTML page serving - use classpath resource
+        try (var inputStream = getClass().getResourceAsStream("/static/samples/HROnboardingSystem/index.html")) {
+            if (inputStream == null) {
+                throw new IOException("HTML file not found in classpath");
+            }
+            String html = new String(inputStream.readAllBytes());
+            
+            // Demo: Add query parameters to show different demo pages
+            String page = queryParams.get("page");
+            if (page != null) {
+                html = html.replace("<!-- DEMO_PAGE_CONTENT -->", 
+                    "<div class='demo-note'>Showing demo page: " + page + "</div>");
+            }
+            
+            return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
         }
-        
-        return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
     }
 
     @Override
@@ -173,12 +178,28 @@ public class IndexController implements ExampleInterface {
             return ResponseEntity.badRequest().body(errorResponse);
         }
 
-        byte[] fileContents = downloadDocumentGroupFile(client, documentGroupId);
+        File file = downloadDocumentGroupFile(client, documentGroupId);
+        
+        String filename = file.getName();
+        byte[] content = Files.readAllBytes(file.toPath());
+        file.delete();
 
         return ResponseEntity.ok()
                 .header("Content-Type", "application/pdf")
-                .header("Content-Disposition", "attachment; filename=\"onboarding_documents.pdf\"")
-                .body(fileContents);
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .body(content);
+    }
+
+    private File downloadDocumentGroupFile(ApiClient client, String documentGroupId) throws SignNowApiException {
+        var orderColl = new com.signnow.api.documentgroup.request.data.DocumentOrderCollection();
+        DownloadDocumentGroupPostRequest downloadRequest = new DownloadDocumentGroupPostRequest(
+            "merged", "no", orderColl
+        ).withDocumentGroupId(documentGroupId);
+
+        DownloadDocumentGroupPostResponse response = (DownloadDocumentGroupPostResponse) 
+            client.send(downloadRequest).getResponse();
+
+        return response.getFile();
     }
 
     /**
@@ -362,23 +383,7 @@ public class IndexController implements ExampleInterface {
         return result;
     }
 
-    /**
-     * Downloads a document group as a single merged PDF file.
-     */
-    private byte[] downloadDocumentGroupFile(ApiClient client, String documentGroupId) throws SignNowApiException, IOException {
-        var orderColl = new com.signnow.api.documentgroup.request.data.DocumentOrderCollection();
-        DownloadDocumentGroupPostRequest downloadRequest = new DownloadDocumentGroupPostRequest(
-            "merged", "no", orderColl
-        ).withDocumentGroupId(documentGroupId);
 
-        DownloadDocumentGroupPostResponse response = (DownloadDocumentGroupPostResponse) 
-            client.send(downloadRequest).getResponse();
-
-        byte[] content = Files.readAllBytes(response.getFile().toPath());
-        response.getFile().delete();
-
-        return content;
-    }
 
     /**
      * Create a document from a template by template ID.

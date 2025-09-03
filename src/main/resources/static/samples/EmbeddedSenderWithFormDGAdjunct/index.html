@@ -200,7 +200,7 @@
                                 const url = window.URL.createObjectURL(blob);
                                 Object.assign(document.createElement('a'), {
                                     href: url,
-                                    download: 'document_group.pdf'
+                                    download: response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || 'document_group.pdf'
                                 }).click();
                                 window.URL.revokeObjectURL(url);
                             } catch {
