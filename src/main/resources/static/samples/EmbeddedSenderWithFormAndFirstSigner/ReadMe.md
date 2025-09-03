@@ -54,7 +54,7 @@ This is a **demonstration application** designed to showcase SignNow API capabil
 ### Step 5: Status Tracking
 - User can view the current status of the document group
 - System provides download functionality for completed documents
-- Status page shows creation and update timestamps
+- Status page shows signer statuses (timestamps are not available for document groups)
 
 ## Page Flow Documentation
 
@@ -100,8 +100,7 @@ Form Page → Embedded Sending → Signing Page → Embedded Signing → Status 
 | Recipient addition | Backend SDK recipient management | `updateDocumentGroupRecipients()` in IndexController.java |
 | Embedded sending creation | Backend SDK embedded sending | `createEmbeddedSendingUrl()` in IndexController.java |
 | Signing URL creation | Backend SDK limited token | `createSigningUrl()` and `generateLimitedToken()` in IndexController.java |
-| Status tracking | Backend SDK status API | `getDocumentGroup()` in IndexController.java |
-| Invite status tracking | Backend SDK invite API | `getInviteStatus()` and `getDocumentGroupSignersStatus()` in IndexController.java |
+| Status tracking | Backend SDK invite API | `getInviteStatus()` and `getDocumentGroupSignersStatus()` in IndexController.java |
 | Document download | Backend SDK download API | `downloadDocumentGroup()` and `downloadDocumentGroupFile()` in IndexController.java |
 
 ## Sequence of Function Calls
@@ -209,10 +208,10 @@ SIGNNOW_PASSWORD=your_password
 
 5. **Track completion**
    - Monitor the status page for document completion
-   - View individual signer statuses and timestamps
-   - Download the completed document when ready
+   - View individual signer statuses
+   - Download the merged PDF document when ready
    - Refresh status to get latest updates
-   - Parent application is notified when workflow is complete
+   - Parent application is notified when status page loads
 
 ## SDK Integration Details
 
@@ -338,7 +337,7 @@ for (var step : inviteStatusResponse.getInvite().getSteps()) {
 
 ### Document Download
 ```java
-// Demo: Download merged PDF file
+// Demo: Download merged PDF file for entire document group
 var orderColl = new DocumentOrderCollection();
 var downloadRequest = new DownloadDocumentGroupPostRequest(
     "merged", "no", orderColl
@@ -358,7 +357,7 @@ return ResponseEntity.ok()
 
 ### Parent Application Notification
 ```javascript
-// Notify parent application when workflow is complete
+// Notify parent application when status page loads
 parent.postMessage({type: "SAMPLE_APP_FINISHED"}, location.origin);
 ```
 
@@ -390,7 +389,7 @@ The demo includes comprehensive error handling for:
 - Invite status tracking errors
 - Document download failures
 
-All errors are logged and returned to the frontend with appropriate user-friendly messages. The frontend displays error messages to users and provides retry functionality for failed operations.
+All errors are returned to the frontend with appropriate user-friendly messages. The frontend displays error messages to users and provides retry functionality for failed operations.
 
 ## Security Considerations
 
