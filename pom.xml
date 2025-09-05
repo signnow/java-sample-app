@@ -42,9 +42,7 @@
         <dependency>
             <groupId>com.signnow</groupId>
             <artifactId>signnow-java-sdk</artifactId>
-            <version>3.2.1</version>
-            <scope>system</scope>
-            <systemPath>/home/mikhail/IdeaProjects/java-sample-app/signnow-java-sdk-3.2.1.jar</systemPath>
+            <version>3.5.0</version>
         </dependency>
     </dependencies>
 
