@@ -7,8 +7,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,11 +15,17 @@ public class RoutingController {
 
     @GetMapping("/")
     public ResponseEntity<String> root() throws IOException {
-        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/error.html")));
-
-        return ResponseEntity.status(404)
-                .header("Content-Type", "text/html")
-                .body(html);
+        try (var inputStream = getClass().getResourceAsStream("/static/error.html")) {
+            if (inputStream == null) {
+                return ResponseEntity.status(404)
+                        .header("Content-Type", "text/html")
+                        .body("<html><body><h1>404 - Page Not Found</h1></body></html>");
+            }
+            String html = new String(inputStream.readAllBytes());
+            return ResponseEntity.status(404)
+                    .header("Content-Type", "text/html")
+                    .body(html);
+        }
     }
 
     @GetMapping("/samples/{exampleName}")
@@ -30,10 +34,17 @@ public class RoutingController {
             @RequestParam Map<String, String> queryParams
     ) throws IOException {
         if (!exampleName.matches("^[a-zA-Z0-9_]+$")) {
-            String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/error.html")));
-            return ResponseEntity.status(404)
-                    .header("Content-Type", "text/html")
-                    .body(html);
+            try (var inputStream = getClass().getResourceAsStream("/static/error.html")) {
+                if (inputStream == null) {
+                    return ResponseEntity.status(404)
+                            .header("Content-Type", "text/html")
+                            .body("<html><body><h1>404 - Page Not Found</h1></body></html>");
+                }
+                String html = new String(inputStream.readAllBytes());
+                return ResponseEntity.status(404)
+                        .header("Content-Type", "text/html")
+                        .body(html);
+            }
         }
         String controllerPath = "com.signnow.samples." + exampleName + ".IndexController";
         try {
@@ -46,10 +57,17 @@ public class RoutingController {
             // Log the error
             System.err.println("Error loading example controller: " + e.getMessage());
         }
-        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/error.html")));
-        return ResponseEntity.status(404)
-                .header("Content-Type", "text/html")
-                .body(html);
+        try (var inputStream = getClass().getResourceAsStream("/static/error.html")) {
+            if (inputStream == null) {
+                return ResponseEntity.status(404)
+                        .header("Content-Type", "text/html")
+                        .body("<html><body><h1>404 - Page Not Found</h1></body></html>");
+            }
+            String html = new String(inputStream.readAllBytes());
+            return ResponseEntity.status(404)
+                    .header("Content-Type", "text/html")
+                    .body(html);
+        }
     }
 
     @PostMapping("/api/samples/{exampleName}")
@@ -57,10 +75,17 @@ public class RoutingController {
             @PathVariable String exampleName,
             @RequestBody String formData) throws IOException {
         if (!exampleName.matches("^[a-zA-Z0-9_]+$")) {
-            String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/error.html")));
-            return ResponseEntity.status(404)
-                    .header("Content-Type", "text/html")
-                    .body(html);
+            try (var inputStream = getClass().getResourceAsStream("/static/error.html")) {
+                if (inputStream == null) {
+                    return ResponseEntity.status(404)
+                            .header("Content-Type", "text/html")
+                            .body("<html><body><h1>404 - Page Not Found</h1></body></html>");
+                }
+                String html = new String(inputStream.readAllBytes());
+                return ResponseEntity.status(404)
+                        .header("Content-Type", "text/html")
+                        .body(html);
+            }
         }
         String controllerPath = "com.signnow.samples." + exampleName + ".IndexController";
         try {
@@ -76,9 +101,16 @@ public class RoutingController {
                     .header("Content-Type", "application/json")
                     .body(new ObjectMapper().writeValueAsString(errorResponse));
         }
-        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/error.html")));
-        return ResponseEntity.status(404)
-                .header("Content-Type", "text/html")
-                .body(html);
+        try (var inputStream = getClass().getResourceAsStream("/static/error.html")) {
+            if (inputStream == null) {
+                return ResponseEntity.status(404)
+                        .header("Content-Type", "text/html")
+                        .body("<html><body><h1>404 - Page Not Found</h1></body></html>");
+            }
+            String html = new String(inputStream.readAllBytes());
+            return ResponseEntity.status(404)
+                    .header("Content-Type", "text/html")
+                    .body(html);
+        }
     }
 }

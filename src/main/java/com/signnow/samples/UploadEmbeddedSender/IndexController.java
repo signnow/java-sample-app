@@ -23,6 +23,7 @@ import com.signnow.javasampleapp.ExampleInterface;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,12 +58,7 @@ public class IndexController implements ExampleInterface {
                 List<Map<String, Object>> signers = getDocumentGroupSignersStatus(client, documentGroupId);
                 return ResponseEntity.ok(signers);
             case "download-doc-group":
-                String docGroupId = (String) data.get("document_group_id");
-                byte[] pdfBytes = downloadDocumentGroupFile(client, docGroupId);
-                return ResponseEntity.ok()
-                        .header("Content-Type", "application/pdf")
-                        .header("Content-Disposition", "attachment; filename=\"document_group.pdf\"")
-                        .body(pdfBytes);
+                return downloadDocumentGroup(data, client);
             default:
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
@@ -238,7 +234,22 @@ public class IndexController implements ExampleInterface {
     /**
      * Download the entire doc group as a merged PDF, once all are signed.
      */
-    private byte[] downloadDocumentGroupFile(ApiClient client, String documentGroupId) throws SignNowApiException, IOException {
+    private ResponseEntity<?> downloadDocumentGroup(Map<String, Object> data, ApiClient client) throws SignNowApiException, IOException {
+        String documentGroupId = (String) data.get("document_group_id");
+        
+        File file = downloadDocumentGroupFile(client, documentGroupId);
+        
+        String filename = file.getName();
+        byte[] content = Files.readAllBytes(file.toPath());
+        file.delete();
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/pdf")
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .body(content);
+    }
+
+    private File downloadDocumentGroupFile(ApiClient client, String documentGroupId) throws SignNowApiException {
         var orderColl = new com.signnow.api.documentgroup.request.data.DocumentOrderCollection();
         DownloadDocumentGroupPostRequest downloadRequest = new DownloadDocumentGroupPostRequest(
                 "merged",
@@ -248,9 +259,6 @@ public class IndexController implements ExampleInterface {
 
         DownloadDocumentGroupPostResponse response = (DownloadDocumentGroupPostResponse) client.send(downloadRequest).getResponse();
 
-        byte[] content = Files.readAllBytes(response.getFile().toPath());
-        response.getFile().delete();
-
-        return content;
+        return response.getFile();
     }
 } 

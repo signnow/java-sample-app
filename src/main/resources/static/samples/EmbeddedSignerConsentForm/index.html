@@ -66,9 +66,12 @@
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
 
+                // Extract filename from Content-Disposition header
+                const filename = response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || 'Consent_Form.pdf';
+                
                 const link = Object.assign(document.createElement('a'), {
                     href: url,
-                    download: 'document.pdf'
+                    download: filename
                 });
                 link.click();
 

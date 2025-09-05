@@ -21,7 +21,6 @@ import com.signnow.api.document.request.DocumentDownloadGetRequest;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,8 +39,13 @@ public class IndexController implements ExampleInterface {
     @Override
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
         // Always return the HTML page and let the client-side JS decide which sub-page to show.
-        String html = Files.readString(Paths.get("src/main/resources/static/samples/EmbeddedEditingAndSigningDG/index.html"));
-        return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+        try (var inputStream = getClass().getResourceAsStream("/static/samples/EmbeddedEditingAndSigningDG/index.html")) {
+            if (inputStream == null) {
+                throw new IOException("HTML file not found in classpath");
+            }
+            String html = new String(inputStream.readAllBytes());
+            return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+        }
     }
 
     @Override
@@ -102,11 +106,22 @@ public class IndexController implements ExampleInterface {
             case "download-doc-group":
             default: {
                 String documentGroupId = (String) data.get("document_group_id");
-                byte[] pdfBytes = downloadDocumentGroup(client, documentGroupId);
+                
+                var orderColl = new com.signnow.api.documentgroup.request.data.DocumentOrderCollection();
+                var downloadReq = new com.signnow.api.documentgroup.request.DownloadDocumentGroupPostRequest("merged", "no", orderColl)
+                        .withDocumentGroupId(documentGroupId);
+
+                var downloadResp = (com.signnow.api.documentgroup.response.DownloadDocumentGroupPostResponse) client.send(downloadReq).getResponse();
+
+                // Get the actual filename from the downloaded file
+                String filename = downloadResp.getFile().getName();
+                byte[] bytes = Files.readAllBytes(downloadResp.getFile().toPath());
+                downloadResp.getFile().delete();
+                
                 return ResponseEntity.ok()
                         .header("Content-Type", "application/pdf")
-                        .header("Content-Disposition", "attachment; filename=\"final_document_group.pdf\"")
-                        .body(pdfBytes);
+                        .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                        .body(bytes);
             }
         }
     }
@@ -296,17 +311,7 @@ public class IndexController implements ExampleInterface {
         return result;
     }
 
-    private byte[] downloadDocumentGroup(ApiClient client, String documentGroupId) throws SignNowApiException, IOException {
-        var orderColl = new com.signnow.api.documentgroup.request.data.DocumentOrderCollection();
-        var downloadReq = new com.signnow.api.documentgroup.request.DownloadDocumentGroupPostRequest("merged", "no", orderColl)
-                .withDocumentGroupId(documentGroupId);
 
-        var downloadResp = (com.signnow.api.documentgroup.response.DownloadDocumentGroupPostResponse) client.send(downloadReq).getResponse();
-
-        byte[] bytes = Files.readAllBytes(downloadResp.getFile().toPath());
-        downloadResp.getFile().delete();
-        return bytes;
-    }
 
     private com.signnow.api.documentgroup.response.DocumentGroupGetResponse getDocumentGroup(ApiClient client, String documentGroupId) throws SignNowApiException {
         var req = new com.signnow.api.documentgroup.request.DocumentGroupGetRequest().withDocumentGroupId(documentGroupId);

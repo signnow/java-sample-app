@@ -13,6 +13,7 @@ import com.signnow.javasampleapp.ExampleInterface;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -50,18 +51,23 @@ public class IndexController implements ExampleInterface {
     private static final String REDIRECT_BASE_URL = "http://localhost:8080/samples/ISVWithFormAndOneClickSendBasicPrefill";
 
     @Override
-    public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
+        public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
         // Demo: Simple HTML page serving
-        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/ISVWithFormAndOneClickSendBasicPrefill/index.html")));
-        
-        // Demo: Add query parameters to show different demo pages
-        String page = queryParams.get("page");
-        if (page != null) {
-            html = html.replace("<!-- DEMO_PAGE_CONTENT -->", 
-                "<div class='demo-note'>Showing demo page: " + page + "</div>");
+        try (var inputStream = getClass().getResourceAsStream("/static/samples/ISVWithFormAndOneClickSendBasicPrefill/index.html")) {
+            if (inputStream == null) {
+                throw new IOException("HTML file not found in classpath");
+            }
+            String html = new String(inputStream.readAllBytes());
+            
+            // Demo: Add query parameters to show different demo pages
+            String page = queryParams.get("page");
+            if (page != null) {
+                html = html.replace("<!-- DEMO_PAGE_CONTENT -->", 
+                    "<div class='demo-note'>Showing demo page: " + page + "</div>");
+            }
+
+            return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
         }
-        
-        return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
     }
 
     @Override
@@ -140,12 +146,28 @@ public class IndexController implements ExampleInterface {
             return ResponseEntity.badRequest().body(errorResponse);
         }
 
-        byte[] fileContents = downloadDocumentGroupFile(client, documentGroupId);
+        File file = downloadDocumentGroupFile(client, documentGroupId);
+        
+        String filename = file.getName();
+        byte[] content = Files.readAllBytes(file.toPath());
+        file.delete();
 
         return ResponseEntity.ok()
                 .header("Content-Type", "application/pdf")
-                .header("Content-Disposition", "attachment; filename=\"completed_document.pdf\"")
-                .body(fileContents);
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .body(content);
+    }
+
+    private File downloadDocumentGroupFile(ApiClient client, String documentGroupId) throws SignNowApiException {
+        var orderColl = new com.signnow.api.documentgroup.request.data.DocumentOrderCollection();
+        var downloadRequest = new com.signnow.api.documentgroup.request.DownloadDocumentGroupPostRequest(
+            "merged", "no", orderColl
+        ).withDocumentGroupId(documentGroupId);
+
+        var response = (com.signnow.api.documentgroup.response.DownloadDocumentGroupPostResponse) 
+            client.send(downloadRequest).getResponse();
+
+        return response.getFile();
     }
 
     private Map<String, Object> createDocumentGroupFromTemplate(ApiClient client) throws SignNowApiException {
@@ -349,20 +371,7 @@ public class IndexController implements ExampleInterface {
         return signers;
     }
 
-    private byte[] downloadDocumentGroupFile(ApiClient client, String documentGroupId) throws SignNowApiException, IOException {
-        var orderColl = new com.signnow.api.documentgroup.request.data.DocumentOrderCollection();
-        var downloadRequest = new com.signnow.api.documentgroup.request.DownloadDocumentGroupPostRequest(
-            "merged", "no", orderColl
-        ).withDocumentGroupId(documentGroupId);
 
-        var response = (com.signnow.api.documentgroup.response.DownloadDocumentGroupPostResponse) 
-            client.send(downloadRequest).getResponse();
-
-        byte[] content = Files.readAllBytes(response.getFile().toPath());
-        response.getFile().delete();
-
-        return content;
-    }
 
     private com.signnow.api.documentgroup.response.DocumentGroupGetResponse getDocumentGroup(ApiClient client, String documentGroupId) throws SignNowApiException {
         var request = new com.signnow.api.documentgroup.request.DocumentGroupGetRequest()
