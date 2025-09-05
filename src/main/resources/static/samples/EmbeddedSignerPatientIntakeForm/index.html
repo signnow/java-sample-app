@@ -109,7 +109,7 @@
 
                         const link = Object.assign(document.createElement('a'), {
                             href: url,
-                            download: 'document.pdf'
+                            download: response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || 'patient_intake.pdf'
                         });
                         link.click();
 

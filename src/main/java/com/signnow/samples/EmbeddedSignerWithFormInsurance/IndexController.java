@@ -25,6 +25,7 @@ import com.signnow.api.document.request.DocumentDownloadGetRequest;
 import com.signnow.api.embeddedinvite.request.data.InviteCollection;
 
 import java.io.IOException;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -36,8 +37,13 @@ public class IndexController implements ExampleInterface {
     private static final String TEMPLATE_ID = "60d8e92f12004fda8985d4574237507e6407530d";
 
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
-        String html = new String(Files.readAllBytes(Paths.get("src/main/resources/static/samples/EmbeddedSignerWithFormInsurance/index.html")));
-        return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+        try (var inputStream = getClass().getResourceAsStream("/static/samples/EmbeddedSignerWithFormInsurance/index.html")) {
+            if (inputStream == null) {
+                throw new IOException("HTML file not found in classpath");
+            }
+            String html = new String(inputStream.readAllBytes());
+            return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+        }
     }
 
     public ResponseEntity<?> handlePost(String formData) throws IOException, SignNowApiException {
@@ -56,12 +62,16 @@ public class IndexController implements ExampleInterface {
         }
 
         String documentId = data.get("document_id");
-        byte[] file = downloadDocument(client, documentId);
+        File file = downloadDocumentWithFilename(client, documentId);
+        
+        String filename = file.getName();
+        byte[] content = Files.readAllBytes(file.toPath());
+        file.delete();
 
         return ResponseEntity.ok()
                 .header("Content-Type", "application/pdf")
-                .header("Content-Disposition", "attachment; filename=\"result.pdf\"")
-                .body(file);
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .body(content);
     }
 
     private String createEmbeddedInviteAndReturnSigningLink(ApiClient client, String templateId, String fullName, String email) throws SignNowApiException, IOException {
@@ -127,14 +137,12 @@ public class IndexController implements ExampleInterface {
         return null;
     }
 
-    private byte[] downloadDocument(ApiClient client, String documentId) throws SignNowApiException, IOException {
+    private File downloadDocumentWithFilename(ApiClient client, String documentId) throws SignNowApiException, IOException {
         DocumentDownloadGetRequest downloadRequest = new DocumentDownloadGetRequest();
         downloadRequest.withDocumentId(documentId).withType("collapsed");
 
         DocumentDownloadGetResponse response = (DocumentDownloadGetResponse) client.send(downloadRequest).getResponse();
 
-        byte[] fileBytes = Files.readAllBytes(response.getFile().toPath());
-        response.getFile().delete();
-        return fileBytes;
+        return response.getFile();
     }
 }
