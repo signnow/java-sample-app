@@ -349,17 +349,6 @@ public class IndexController implements ExampleInterface {
 
         // Get recipients to use their roles
         var recipientsResponse = getDocumentGroupRecipients(client, documentGroupId);
-        
-        // Debug: Print recipients response as JSON
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            String jsonResponse = mapper.writeValueAsString(recipientsResponse);
-            System.out.println("DEBUG: DocumentGroupRecipientsGetResponse JSON:");
-            System.out.println(jsonResponse);
-        } catch (Exception e) {
-            System.out.println("DEBUG: Error serializing DocumentGroupRecipientsGetResponse: " + e.getMessage());
-        }
-        
         var recipients = recipientsResponse.getData().getRecipients();
 
         // Check if we have recipients

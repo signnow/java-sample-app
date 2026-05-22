@@ -91,18 +91,16 @@
                 // Redirect to embedded sending URL
                 window.location.href = result.embedded_url;
             } else {
-                uploadContent.innerHTML = `
-                        <div class="alert alert-danger">
-                            Error: ${result.message || 'Failed to upload document and create embedded sending link'}
-                        </div>
-                    `;
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger';
+                errorDiv.textContent = 'Error: ' + (result.message || 'Failed to upload document and create embedded sending link');
+                uploadContent.replaceChildren(errorDiv);
             }
         } catch (error) {
-            uploadContent.innerHTML = `
-                    <div class="alert alert-danger">
-                        Error: ${error.message}
-                    </div>
-                `;
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger';
+            errorDiv.textContent = 'Error: ' + error.message;
+            uploadContent.replaceChildren(errorDiv);
             console.error(error);
         }
     }
