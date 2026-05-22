@@ -14,6 +14,7 @@ import com.signnow.api.template.response.CloneTemplatePostResponse;
 import com.signnow.core.ApiClient;
 import com.signnow.core.exception.SignNowApiException;
 import com.signnow.javasampleapp.ExampleInterface;
+import com.signnow.javasampleapp.config.AppConfig;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import com.signnow.api.document.response.DocumentDownloadGetResponse;
@@ -97,7 +98,7 @@ public class IndexController implements ExampleInterface {
     }
 
     private String getEmbeddedSendingLink(ApiClient client, String documentId) throws SignNowApiException {
-        String redirectUrl = "http://localhost:8080/samples/PrefillAndEmbeddedSendingAgreement?page=download-with-status&document_id=" + documentId;
+        String redirectUrl = AppConfig.sampleUrl("PrefillAndEmbeddedSendingAgreement") + "?page=download-with-status&document_id=" + documentId;
 
         DocumentEmbeddedSendingLinkPostRequest request = new DocumentEmbeddedSendingLinkPostRequest("document", redirectUrl, 16, "self");
         request.withDocumentId(documentId);

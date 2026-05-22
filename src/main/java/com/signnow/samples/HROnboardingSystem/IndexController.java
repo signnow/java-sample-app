@@ -29,6 +29,7 @@ import com.signnow.api.document.response.data.Role;
 import com.signnow.core.ApiClient;
 import com.signnow.core.exception.SignNowApiException;
 import com.signnow.javasampleapp.ExampleInterface;
+import com.signnow.javasampleapp.config.AppConfig;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
@@ -57,10 +58,6 @@ import java.util.Set;
 @Controller
 public class IndexController implements ExampleInterface {
 
-    // Demo configuration - in production, these would come from environment/config
-    private static final String USER_EMAIL = "example@example.com"; // Demo user
-    private static final String USER_PASSWORD = "example"; // Demo password
-
     // Template IDs for HR onboarding documents
     private static final String I9_FORM_TEMPLATE_ID = "940989288b8b4c62a950b908333b5b21efd6a174";
     private static final String NDA_TEMPLATE_ID = "a4f523d0cb234ffc99b0badc9e6f59111f76abc2";
@@ -71,9 +68,6 @@ public class IndexController implements ExampleInterface {
     private static final String TEXT_FIELD_2 = "Text Field 2";
     private static final String TEXT_FIELD_156 = "Text Field 156";
     private static final String EMAIL_FIELD = "Email";
-
-    // Demo URL constants
-    private static final String REDIRECT_BASE_URL = "http://localhost:8080/samples/HROnboardingSystem";
 
     @Override
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
@@ -279,7 +273,7 @@ public class IndexController implements ExampleInterface {
                         null,
                         null,
                         null,
-                        REDIRECT_BASE_URL + "?page=status-page&document_group_id=" + documentGroupId,
+                        AppConfig.sampleUrl("HROnboardingSystem") + "?page=status-page&document_group_id=" + documentGroupId,
                         null,
                         "self",
                         null

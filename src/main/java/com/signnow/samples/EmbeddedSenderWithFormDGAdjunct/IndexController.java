@@ -10,6 +10,7 @@ import com.signnow.api.documentfield.request.data.Field;
 import com.signnow.core.ApiClient;
 import com.signnow.core.exception.SignNowApiException;
 import com.signnow.javasampleapp.ExampleInterface;
+import com.signnow.javasampleapp.config.AppConfig;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
@@ -40,18 +41,11 @@ import java.util.Map;
 @Controller
 public class IndexController implements ExampleInterface {
 
-    // Demo configuration - in production, these would come from environment/config
     private static final String DOCUMENT_GROUP_TEMPLATE_ID = "e486ebf3fb814d55888bcbf75ceaf62b6db0de5a";
-    private static final String USER_EMAIL = "example@example.com"; // Demo user
-
-    // Demo field names that might exist in templates
 
     // Demo recipient roles
     private static final String PREPARE_CONTRACT_ROLE = "Prepare Contract";
     private static final String CUSTOMER_SIGN_ROLE = "Customer to Sign";
-
-    // Demo URL constants
-    private static final String REDIRECT_BASE_URL = "http://localhost:8080/samples/EmbeddedSenderWithFormDGAdjunct";
 
     @Override
         public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
@@ -122,7 +116,7 @@ public class IndexController implements ExampleInterface {
 
         // Demo: Step 3 - Add recipients to Document Group with different emails for different roles
         String customerEmail = email; // Email from form for "Customer to Sign"
-        String preparerEmail = USER_EMAIL; // Email from config for "Prepare Contract"
+        String preparerEmail = AppConfig.demoUserEmail(); // Email from config for "Prepare Contract"
         Map<String, Object> addRecipientsResponse = updateDocumentGroupRecipients(
             client, documentGroupId, customerEmail, preparerEmail
         );
@@ -325,7 +319,7 @@ public class IndexController implements ExampleInterface {
 
     private Map<String, Object> createEmbeddedSendingUrl(ApiClient client, String documentGroupId) throws SignNowApiException {
         // Demo: Create embedded sending URL with redirect back to status page
-        String redirectUrl = REDIRECT_BASE_URL + "?" +
+        String redirectUrl = AppConfig.sampleUrl("EmbeddedSenderWithFormDGAdjunct") + "?" +
             "page=status-page&document_group_id=" + documentGroupId;
 
         var embeddedSendingRequest = new com.signnow.api.embeddedsending.request.DocumentGroupEmbeddedSendingLinkPostRequest(

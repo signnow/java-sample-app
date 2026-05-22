@@ -11,6 +11,7 @@ import com.signnow.api.template.response.CloneTemplatePostResponse;
 import com.signnow.core.ApiClient;
 import com.signnow.core.exception.SignNowApiException;
 import com.signnow.javasampleapp.ExampleInterface;
+import com.signnow.javasampleapp.config.AppConfig;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import com.signnow.api.document.response.DocumentDownloadGetResponse;
@@ -76,7 +77,7 @@ public class IndexController implements ExampleInterface {
         CloneTemplatePostResponse cloneResponse = createDocumentFromTemplate(client);
         String documentId = cloneResponse.getId();
 
-        String redirectUrl = "http://localhost:8080/samples/EmbeddedSenderWithoutFormFile?page=download-with-status&document_id=" + documentId;
+        String redirectUrl = AppConfig.sampleUrl("EmbeddedSenderWithoutFormFile") + "?page=download-with-status&document_id=" + documentId;
         DocumentEmbeddedSendingLinkPostRequest request = new DocumentEmbeddedSendingLinkPostRequest("document", redirectUrl, 16, "self");
         request.withDocumentId(documentId);
 

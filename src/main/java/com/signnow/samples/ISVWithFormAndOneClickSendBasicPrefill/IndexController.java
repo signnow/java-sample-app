@@ -10,6 +10,7 @@ import com.signnow.api.documentfield.request.data.Field;
 import com.signnow.core.ApiClient;
 import com.signnow.core.exception.SignNowApiException;
 import com.signnow.javasampleapp.ExampleInterface;
+import com.signnow.javasampleapp.config.AppConfig;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
@@ -38,17 +39,11 @@ import java.util.Map;
 @Controller
 public class IndexController implements ExampleInterface {
 
-    // Demo configuration - in production, these would come from environment/config
     private static final String DOCUMENT_GROUP_TEMPLATE_ID = "6e79b9e6f9624984a7f054a7171d1644d0fb9934";
-    private static final String USER_EMAIL = "example@example.com"; // Demo user
-    private static final String USER_PASSWORD = "example"; // Demo password
 
     // Demo field names that might exist in templates
     private static final String NAME_FIELD = "Name";
     private static final String EMAIL_FIELD = "Email";
-
-    // Demo URL constants
-    private static final String REDIRECT_BASE_URL = "http://localhost:8080/samples/ISVWithFormAndOneClickSendBasicPrefill";
 
     @Override
         public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
@@ -267,7 +262,7 @@ public class IndexController implements ExampleInterface {
                 null,
                 null,
                 null,
-                REDIRECT_BASE_URL + "?page=status-page&document_group_id=" + documentGroupId, // redirectUri
+                AppConfig.sampleUrl("ISVWithFormAndOneClickSendBasicPrefill") + "?page=status-page&document_group_id=" + documentGroupId, // redirectUri
                 null,
                 "self", // redirectTarget
                 null
