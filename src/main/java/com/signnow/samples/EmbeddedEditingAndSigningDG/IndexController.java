@@ -14,6 +14,7 @@ import com.signnow.api.template.response.CloneTemplatePostResponse;
 import com.signnow.core.ApiClient;
 import com.signnow.core.exception.SignNowApiException;
 import com.signnow.javasampleapp.ExampleInterface;
+import com.signnow.javasampleapp.config.AppConfig;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import com.signnow.api.document.response.DocumentDownloadGetResponse;
@@ -198,7 +199,7 @@ public class IndexController implements ExampleInterface {
     }
 
     private String createEmbeddedEditLink(ApiClient client, String documentGroupId) throws SignNowApiException {
-        String redirectUrl = "http://localhost:8080/samples/EmbeddedEditingAndSigningDG?page=page2-embedded-sending&document_group_id=" + documentGroupId;
+        String redirectUrl = AppConfig.sampleUrl("EmbeddedEditingAndSigningDG") + "?page=page2-embedded-sending&document_group_id=" + documentGroupId;
 
         var request = new com.signnow.api.embeddededitor.request.DocumentGroupEmbeddedEditorLinkPostRequest(
                 redirectUrl, "self", 15
@@ -218,7 +219,7 @@ public class IndexController implements ExampleInterface {
         String recipient1Email = findEmailByRoleName(recipientsResp, ROLE_RECIPIENT_1);
         String recipient2Email = findEmailByRoleName(recipientsResp, ROLE_RECIPIENT_2);
 
-        String redirectUrl = "http://localhost:8080/samples/EmbeddedEditingAndSigningDG?page=page4-status-download&document_group_id=" + documentGroupId;
+        String redirectUrl = AppConfig.sampleUrl("EmbeddedEditingAndSigningDG") + "?page=page4-status-download&document_group_id=" + documentGroupId;
 
         // -- Build invite list
         java.util.List<com.signnow.api.embeddedgroupinvite.request.data.invite.Invite> inviteSteps = new LinkedList<>();

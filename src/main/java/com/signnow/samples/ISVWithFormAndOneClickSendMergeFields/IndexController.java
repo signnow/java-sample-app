@@ -12,6 +12,7 @@ import com.signnow.api.document.request.DocumentPutRequest;
 import com.signnow.core.ApiClient;
 import com.signnow.core.exception.SignNowApiException;
 import com.signnow.javasampleapp.ExampleInterface;
+import com.signnow.javasampleapp.config.AppConfig;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
@@ -41,10 +42,7 @@ import java.util.Map;
 @Controller
 public class IndexController implements ExampleInterface {
 
-    // Demo configuration - in production, these would come from environment/config
     private static final String DOCUMENT_GROUP_TEMPLATE_ID = "8e36720a436041ea837dc543ec00a3bc3559df45";
-    private static final String USER_EMAIL = "example@example.com"; // Demo user
-    private static final String USER_PASSWORD = "example"; // Demo password
 
     // Demo field names that might exist in templates
     private static final String CUSTOMER_NAME_FIELD = "CustomerName";
@@ -53,9 +51,6 @@ public class IndexController implements ExampleInterface {
     // Demo recipient roles
     private static final String PREPARE_CONTRACT_ROLE = "Prepare Contract";
     private static final String CUSTOMER_SIGN_ROLE = "Customer to Sign";
-
-    // Demo URL constants
-    private static final String REDIRECT_BASE_URL = "http://localhost:8080/samples/ISVWithFormAndOneClickSendMergeFields";
 
     @Override
     public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
@@ -354,17 +349,6 @@ public class IndexController implements ExampleInterface {
 
         // Get recipients to use their roles
         var recipientsResponse = getDocumentGroupRecipients(client, documentGroupId);
-        
-        // Debug: Print recipients response as JSON
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            String jsonResponse = mapper.writeValueAsString(recipientsResponse);
-            System.out.println("DEBUG: DocumentGroupRecipientsGetResponse JSON:");
-            System.out.println(jsonResponse);
-        } catch (Exception e) {
-            System.out.println("DEBUG: Error serializing DocumentGroupRecipientsGetResponse: " + e.getMessage());
-        }
-        
         var recipients = recipientsResponse.getData().getRecipients();
 
         // Check if we have recipients
@@ -386,7 +370,7 @@ public class IndexController implements ExampleInterface {
                 emailToUse = email; // Use form email for "Prepare Contract"
             } else if (CUSTOMER_SIGN_ROLE.equals(recipient.getName())) {
                 // Use config email for "Customer to Sign"
-                emailToUse = USER_EMAIL;
+                emailToUse = AppConfig.demoUserEmail();
             }
 
             // Create invite email for this recipient
@@ -411,7 +395,7 @@ public class IndexController implements ExampleInterface {
                     null,
                     null,
                     null,
-                    REDIRECT_BASE_URL + "?page=status-page&document_group_id=" + documentGroupId, // redirectUri
+                    AppConfig.sampleUrl("ISVWithFormAndOneClickSendMergeFields") + "?page=status-page&document_group_id=" + documentGroupId, // redirectUri
                     null,
                     "self", // redirectTarget
                     null

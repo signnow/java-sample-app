@@ -1,93 +1,197 @@
-# SignNow Java SDK Sample Application
+# SignNow Java Sample App
 
-This is a demonstration project that showcases how to use the [SignNow Java SDK](https://github.com/signnow/SNJavaSDK) to interact with the SignNow API.
+[![Java](https://img.shields.io/badge/java-17-orange)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4-brightgreen)](https://spring.io/projects/spring-boot)
+[![SignNow SDK](https://img.shields.io/badge/SignNow_SDK-3.5+-light)](https://github.com/signnow/SNJavaSDK)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
-Each sample represents a standalone use case and is implemented in a separate directory under:
+A Spring Boot application demonstrating the SignNow API via the official [SignNow Java SDK](https://github.com/signnow/SNJavaSDK).
 
+## Quick Start
+
+### 1. Enter the directory
+
+```bash
+cd SampleApps/java-sample-app
 ```
-src/main/java/com/signnow/samples
-```
 
-The static frontend resources for each sample (e.g. HTML, JS, CSS) are located in:
-
-```
-src/main/resources/static/samples
-```
-
-## Getting Started
-
-### 1. Set Up Your Environment
-
-Copy the provided `.env.example` file to `.env`:
+### 2. Configure environment
 
 ```bash
 cp .env.example .env
 ```
 
-Edit the `.env` file and replace the placeholder values with your actual SignNow API credentials and settings.
+Edit `.env` and fill in your SignNow credentials:
 
-### 2. Build and Run the Application
+| Variable | Example | Description |
+|---|---|---|
+| `SIGNNOW_API_HOST` | `https://api.signnow.com` | Production or sandbox URL |
+| `SIGNNOW_API_BASIC_TOKEN` | `c2lnbk5vdy4...` | Base64 token from [API Dashboard](https://app.signnow.com/webapp/api-dashboard/keys) |
+| `SIGNNOW_API_USERNAME` | `you@example.com` | Your SignNow account email |
+| `SIGNNOW_API_PASSWORD` | `••••••` | Your SignNow account password |
+| `SIGNNOW_DOWNLOADS_DIR` | `/tmp/signnow-downloads` | Where downloaded documents are cached |
+| `APP_BASE_URL` | `http://localhost:8080` | Public base URL used in `redirect_uri` |
+| `SIGNNOW_SIGNER_EMAIL` | `signer@example.com` | Default embedded signer email |
+| `SIGNNOW_DEMO_USER_EMAIL` | `demo@example.com` | Demo sender email (used in some samples) |
+| `SIGNNOW_DEMO_USER_PASSWORD` | `••••••` | Demo sender password |
 
-You can build and run the application using Docker:
+### 3. Run with Docker
 
 ```bash
 docker build -t java-sample-app .
 docker run -v $(pwd)/.env:/.env -p 8080:8080 java-sample-app
 ```
 
-Once the app is running, access it via:
+### 4. Run locally (no Docker)
+
+```bash
+mvn spring-boot:run
+```
+
+Requires Java 17+ and Maven 3.9+ on `PATH`. The app reads `.env` from the working directory.
+
+### 5. Open a sample
 
 ```
-http://localhost:8080/samples/{exampleName}
+http://localhost:8080/samples/EmbeddedSignerConsentForm
 ```
 
-Replace `{exampleName}` with the name of the specific example you want to run (e.g. `DocumentInvite`, `PrefillForm`, etc.).
+`http://localhost:8080/samples` lists all available samples.
 
-## Routing Logic
+## Available Samples (20)
 
-All requests are routed through a single controller: `RoutingController`.
+| Sample | Description |
+|---|---|
+| EmbeddedSignerConsentForm | Consent form with single embedded signer |
+| EmbeddedSenderWithoutFormFile | Sales proposal — embedded sender |
+| EmbeddedSenderWithFormCreditLoanAgreement | Credit loan agreement |
+| EmbeddedSignerConsumerServices | Veterinary intake form |
+| EmbeddedSignerPatientIntakeForm | Patient intake (healthcare) |
+| EmbeddedSignerWithFormInsurance | Insurance claim form |
+| MedicalInsuranceClaimForm | Medical insurance claim |
+| EmbeddedEditingAndSigningDG | Document generation: edit + sign |
+| EmbeddedSenderWithFormAndFirstSigner | Sender is also first signer |
+| EmbeddedSenderWithFormDG | Document generation variant |
+| EmbeddedSenderWithFormDGAdjunct | DG adjunct form |
+| EmbeddedSenderWithFormDGConstr | DG construction form |
+| ISVWithFormAndOneClickSendBasicPrefill | ISV one-click send, basic prefill |
+| ISVWithFormAndOneClickSendMergeFields | ISV one-click send, merge fields |
+| HROnboardingSystem | HR onboarding multi-document flow |
+| UploadEmbeddedSender | Upload PDF + embedded sender |
+| PrefillAndEmbeddedSendingAgreement | Prefill + embedded send |
+| PrefillAndOneClickSendingAgreement | Prefill + one-click send |
+| EVDemoSendingAnd3EmbeddedSigners | Real estate: 3 sequential embedded signers |
+| UploadEmbeddedEditingAndInvite | Upload PDF, embedded edit, invite |
 
-* **GET /samples/{exampleName}**: Loads and executes the corresponding `IndexController` class from the example folder.
-* **POST /api/samples/{exampleName}**: Handles form submissions for the given example.
+## Project Structure
 
-Only example names matching `^[a-zA-Z0-9_]+$` are allowed for security reasons.
+```
+src/main/java/com/signnow/
+  javasampleapp/
+    JavaSampleAppApplication.java   Spring Boot entry point
+    ExampleInterface.java           Sample contract (handleGet + handlePost)
+    controllers/
+      RoutingController.java        GET /samples/:name, POST /api/samples/:name
+    config/
+      AppConfig.java                Reads .env; provides AppConfig.sampleUrl()
+  samples/
+    <SampleName>/
+      IndexController.java          Implements ExampleInterface
 
-## Structure of a Sample Example
+src/main/resources/
+  static/
+    samples/<SampleName>/
+      index.html                    UI served on GET /samples/<SampleName>
+    css/, img/                      Shared static assets
+  application.properties            Spring config
 
-Each sample should implement the `ExampleInterface` and provide its own `IndexController` class with `handleGet()` and `handlePost()` methods.
+src/test/
+  JavaSampleAppApplicationTests.java  Context load test
+  controllers/RoutingControllerTest.java  MockMvc routing tests
+```
 
-____
+## Routing
 
-## Ready to build eSignature integrations with SignNow API? Get the SignNow extension for GitHub Copilot
+| Method | Path | Handler |
+|---|---|---|
+| GET | `/samples/{name}` | `samples/<name>/IndexController.handleGet` |
+| POST | `/api/samples/{name}` | `samples/<name>/IndexController.handlePost` |
+| GET | `/css/*`, `/img/*`, etc. | Shared static files |
 
-Use AI-powered code suggestions to generate SignNow API code snippets in your IDE with GitHub Copilot. Get examples for common integration tasks—from authentication and sending documents for signature to handling webhooks, and building branded workflows.
+Sample names must match `^[a-zA-Z0-9_]+$`. `RoutingController` loads each sample's `IndexController` by class name convention at request time — no whitelist or registration needed.
 
-###  **🚀 Why use SignNow with GitHub Copilot**
+## Add a New Sample
 
-* **Relevant code suggestions**: Get AI-powered, up-to-date code snippets for SignNow API calls. All examples reflect the latest API capabilities and follow current best practices.
-* **Faster development**: Reduce time spent searching documentation.
-* **Fewer mistakes**: Get context-aware guidance aligned with the SignNow API.
-* **Smooth onboarding**: Useful for both new and experienced developers working with the API.
+1. Create `src/main/java/com/signnow/samples/MyNewSample/IndexController.java`:
+   ```java
+   package com.signnow.samples.MyNewSample;
 
-### **Prerequisites:**
+   import com.signnow.javasampleapp.ExampleInterface;
+   import org.springframework.http.ResponseEntity;
+   import org.springframework.stereotype.Controller;
+   import java.io.IOException;
+   import java.util.Map;
 
-1\. GitHub Copilot installed and enabled.  
-2\. SignNow account. [Register here](https://www.signnow.com/developers)
+   @Controller
+   public class IndexController implements ExampleInterface {
+       @Override
+       public ResponseEntity<String> handleGet(Map<String, String> queryParams) throws IOException {
+           try (var in = getClass().getResourceAsStream("/static/samples/MyNewSample/index.html")) {
+               return ResponseEntity.ok().header("Content-Type", "text/html")
+                       .body(new String(in.readAllBytes()));
+           }
+       }
 
-### ⚙️ **How to use it**
+       @Override
+       public ResponseEntity<?> handlePost(String formData) throws Exception {
+           // parse formData as JSON and implement your logic
+           return ResponseEntity.ok("{}");
+       }
+   }
+   ```
+2. Create `src/main/resources/static/samples/MyNewSample/index.html`.
+3. Restart the application — `RoutingController` discovers the new controller automatically.
 
-1\. Install the [SignNow extension](https://github.com/apps/signnow).
+## Tests
 
-2\. Start your prompts with [@signnow](https://github.com/signnow) in the Copilot chat window. The first time you use the extension, you may need to authorize it.
+```bash
+mvn test
+```
 
-3\. Enter a prompt describing the integration scenario.   
-Example: @signnow Generate a Java code example for sending a document group to two signers.
+2 test classes:
+- `JavaSampleAppApplicationTests` — Spring context loads without errors
+- `RoutingControllerTest` — 6 MockMvc tests covering name validation (`^[a-zA-Z0-9_]+$`), 404 for unknown samples, and routing dispatch
 
-4\. Modify the generated code to match your app’s requirements—adjust parameters, headers, and workflows as needed.
+Tests do **not** exercise real SignNow API calls (live credentials required).
 
-### **Troubleshooting**
-**The extension doesn’t provide code examples for the SignNow API**
+## SDK Notes
 
-Make sure you're using `@signnow` in the Copilot chat and that the extension is installed and authorized.
+Known constraints in the SignNow Java SDK that affect this codebase:
 
-____
+**No multipart support in `RoutingController`** — `handlePost` receives `@RequestBody String formData` (raw JSON), not multipart. Samples that conceptually "upload" a file instead read a pre-bundled PDF from `src/main/resources/static/samples/<Name>/`. See `UploadEmbeddedSender` for the pattern.
+
+**`Invite` constructor order** — `new Invite(email, roleId, order, firstName, lastName)`. There is no shorter overload; all five parameters are required.
+
+**`DocumentInvitePostResponse.getData()`** — Returns a collection; each item exposes `.getRoleId()` (to match against role IDs you looked up) and `.getId()` (the invite ID needed for `DocumentInviteLinkPostRequest`).
+
+**`DocumentInviteLinkPostRequest` constructor** — `(authType, linkExpiration)` where `authType` is typically `"none"`. Chain `.withDocumentId()` and `.withFieldInviteId()` before sending.
+
+**`DocumentEmbeddedEditorLinkPostRequest` constructor** — `(redirectUri, redirectTarget, linkExpiration)`. Chain `.withDocumentId()` before sending. Response: `getData().getUrl()`.
+
+## Tech Stack
+
+- Java 17
+- Spring Boot 3.4.1
+- `signnow-java-sdk` 3.5.1 (from Maven Central)
+- Maven 3.9
+- JUnit 5 + Spring MockMvc (tests)
+- Docker: multi-stage `maven:3.9-eclipse-temurin-17` → `eclipse-temurin:17-jre`
+
+## GitHub Copilot Extension
+
+Get AI-powered SignNow code suggestions in your IDE:
+[github.com/apps/signnow](https://github.com/apps/signnow) — start prompts with `@signnow`.
+
+## License
+
+See [LICENSE](./LICENSE).

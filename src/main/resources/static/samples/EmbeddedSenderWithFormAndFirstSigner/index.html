@@ -166,18 +166,16 @@
                 // Redirect to signing URL
                 window.location.href = result.signing_url;
             } else {
-                signingContent.innerHTML = `
-                        <div class="alert alert-danger">
-                            Error: ${result.message || 'Failed to create signing URL'}
-                        </div>
-                    `;
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger';
+                errorDiv.textContent = 'Error: ' + (result.message || 'Failed to create signing URL');
+                signingContent.replaceChildren(errorDiv);
             }
         } catch (error) {
-            signingContent.innerHTML = `
-                    <div class="alert alert-danger">
-                        Error: ${error.message}
-                    </div>
-                `;
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger';
+            errorDiv.textContent = 'Error: ' + error.message;
+            signingContent.replaceChildren(errorDiv);
         }
     }
 

@@ -18,6 +18,7 @@ import com.signnow.api.template.response.CloneTemplatePostResponse;
 import com.signnow.core.ApiClient;
 import com.signnow.core.exception.SignNowApiException;
 import com.signnow.javasampleapp.ExampleInterface;
+import com.signnow.javasampleapp.config.AppConfig;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import com.signnow.api.document.response.DocumentDownloadGetResponse;
@@ -108,7 +109,7 @@ public class IndexController implements ExampleInterface {
 
         DocumentInviteLinkPostResponse embeddedInviteResponse = (DocumentInviteLinkPostResponse) client.send(embeddedInvite).getResponse();
 
-        String redirectUrl = "http://localhost:8080/samples/EmbeddedSignerWithFormInsurance?page=download-container&document_id=" + documentId;
+        String redirectUrl = AppConfig.sampleUrl("EmbeddedSignerWithFormInsurance") + "?page=download-container&document_id=" + documentId;
 
         return embeddedInviteResponse.getData().getLink() + "&redirect_uri=" + java.net.URLEncoder.encode(redirectUrl, "UTF-8");
     }

@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Embedded Editing and Invite - SignNow Sample</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="header">
+        <img src="/img/sign-now.png" alt="SignNow Logo">
+    </div>
+
+    <!-- Upload Page -->
+    <div id="upload-page" class="container-block">
+        <h4>Upload Document for Editing and Signing</h4>
+        <p>This sample uploads a pre-loaded PDF to SignNow, creates an embedded editing link, and sends an invite for signing.</p>
+
+        <button class="button-primary" id="upload-btn">Upload Document</button>
+        <button class="btn btn-dark d-none" id="loading-upload-btn" type="button" disabled>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Uploading...
+        </button>
+
+        <div id="upload-result" class="mt-3" style="display: none;">
+            <div class="alert alert-success">
+                <strong>Success!</strong> Document uploaded successfully. Opening editor...
+            </div>
+            <div class="text-center">
+                <button class="button-primary" id="proceed-to-edit-btn">Open Document Editor</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invite Page -->
+    <div id="invite-page" class="container-block" style="display: none;">
+        <h4>Send Signing Invite</h4>
+        <p>Document has been edited successfully. Now you can send an invite to a signer to complete the document.</p>
+
+        <form id="invite-form">
+            <div class="sn-input-group mb-3">
+                <label for="signer_name">Signer Name <span class="text-danger">*</span></label>
+                <input type="text" id="signer_name" name="signer_name" placeholder="Enter signer name" required>
+            </div>
+            <div class="sn-input-group mb-3">
+                <label for="signer_email">Signer Email <span class="text-danger">*</span></label>
+                <input type="email" id="signer_email" name="signer_email" placeholder="Enter signer email" required>
+            </div>
+            <button type="submit" class="button-primary" id="send-invite-btn">Send Signing Invite</button>
+            <button class="btn btn-dark d-none" id="loading-invite-btn" type="button" disabled>
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Sending invite...
+            </button>
+        </form>
+    </div>
+
+    <!-- Status Page -->
+    <div id="status-page" class="container-block" style="display: none;">
+        <h4>Document Status &amp; Final Document</h4>
+        <p>You can check signing status and download the completed document here.</p>
+
+        <div id="no-recipients-container" class="no-recipients" style="display: none;">
+            <div class="thank-you-message">
+                <h4>No signers found</h4>
+                <p class="mb-4">No signers have been added to this document yet.</p>
+            </div>
+        </div>
+
+        <ul class="status-list" id="documentList"></ul>
+    </div>
+
+    <div class="copyright gray--700 mt-3">Copyright (c) 2025 airSlate, Inc., SignNow API Sample Application v3.0</div>
+
+    <script>
+        function getQueryParam(key) {
+            return new URLSearchParams(window.location.search).get(key) || '';
+        }
+
+        async function handlePages(pagesMap, defaultKey) {
+            const fallbackKey = defaultKey || Object.keys(pagesMap)[0];
+            const pageParam = getQueryParam('page') || fallbackKey;
+
+            Object.keys(pagesMap).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+
+            const handlerKey = pagesMap[pageParam] ? pageParam : fallbackKey;
+            const el = document.getElementById(handlerKey);
+            if (el) el.style.display = 'block';
+            if (typeof pagesMap[handlerKey] === 'function') {
+                await pagesMap[handlerKey](el);
+            }
+        }
+
+        async function initUploadPage() {
+            const uploadBtn  = document.getElementById('upload-btn');
+            const loadingBtn = document.getElementById('loading-upload-btn');
+            const uploadResult = document.getElementById('upload-result');
+            const proceedBtn = document.getElementById('proceed-to-edit-btn');
+
+            const documentId = getQueryParam('document_id');
+            if (documentId) {
+                uploadResult.style.display = 'block';
+            }
+
+            uploadBtn.addEventListener('click', async () => {
+                uploadBtn.classList.add('d-none');
+                loadingBtn.classList.remove('d-none');
+
+                try {
+                    const uploadResp = await fetch('/api/samples/UploadEmbeddedEditingAndInvite', {
+                        method : 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body   : JSON.stringify({ action: 'upload_and_create_dg' })
+                    });
+                    const uploadResult = await uploadResp.json();
+                    if (!uploadResult.success) throw new Error(uploadResult.message || 'Upload failed');
+
+                    const editResp = await fetch('/api/samples/UploadEmbeddedEditingAndInvite', {
+                        method : 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body   : JSON.stringify({ action: 'create_embedded_edit', document_id: uploadResult.document_id })
+                    });
+                    const editResult = await editResp.json();
+                    if (!editResult.success) throw new Error(editResult.message || 'Failed to create editor link');
+
+                    window.location.href = editResult.edit_link;
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                    uploadBtn.classList.remove('d-none');
+                    loadingBtn.classList.add('d-none');
+                }
+            });
+
+            proceedBtn.addEventListener('click', async () => {
+                const docId = getQueryParam('document_id');
+                try {
+                    const resp = await fetch('/api/samples/UploadEmbeddedEditingAndInvite', {
+                        method : 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body   : JSON.stringify({ action: 'create_embedded_edit', document_id: docId })
+                    });
+                    const result = await resp.json();
+                    if (result.success) {
+                        window.location.href = result.edit_link;
+                    } else {
+                        alert('Error: ' + (result.message || 'Failed to create embedded edit link'));
+                    }
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                }
+            });
+        }
+
+        async function initInvitePage() {
+            const documentId = getQueryParam('document_id');
+            if (!documentId) {
+                document.getElementById('invite-page').innerHTML = '<p>No Document ID found. Please start over.</p>';
+                return;
+            }
+
+            const form        = document.getElementById('invite-form');
+            const sendBtn     = document.getElementById('send-invite-btn');
+            const loadingBtn  = document.getElementById('loading-invite-btn');
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                sendBtn.classList.add('d-none');
+                loadingBtn.classList.remove('d-none');
+
+                const signerName  = document.getElementById('signer_name').value.trim();
+                const signerEmail = document.getElementById('signer_email').value.trim();
+
+                try {
+                    const response = await fetch('/api/samples/UploadEmbeddedEditingAndInvite', {
+                        method : 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body   : JSON.stringify({
+                            action      : 'create_invite',
+                            document_id : documentId,
+                            signer_name : signerName,
+                            signer_email: signerEmail
+                        })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        window.location.href = '/samples/UploadEmbeddedEditingAndInvite?page=status-page&document_id=' + documentId;
+                    } else {
+                        throw new Error(result.message || 'Failed to send invite');
+                    }
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                    sendBtn.classList.remove('d-none');
+                    loadingBtn.classList.add('d-none');
+                }
+            });
+        }
+
+        async function initStatusPage() {
+            try { parent.postMessage({ type: 'SAMPLE_APP_FINISHED' }, location.origin); } catch (e) {}
+
+            const documentId = getQueryParam('document_id');
+            if (!documentId) {
+                document.getElementById('status-page').innerHTML = '<p>No Document ID provided.</p>';
+                return;
+            }
+
+            const documentList = document.getElementById('documentList');
+            const noRecipientsContainer = document.getElementById('no-recipients-container');
+
+            async function updateStatuses() {
+                try {
+                    const response = await fetch('/api/samples/UploadEmbeddedEditingAndInvite', {
+                        method : 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body   : JSON.stringify({ action: 'invite-status', document_id: documentId })
+                    });
+                    if (!response.ok) throw new Error('Failed to fetch invite statuses.');
+
+                    const data = await response.json();
+                    documentList.innerHTML = '';
+                    noRecipientsContainer.style.display = 'none';
+
+                    if (Array.isArray(data) && data.length > 0) {
+                        data.forEach(doc => {
+                            const li = document.createElement('li');
+                            li.className = 'status-item';
+                            li.innerHTML = `
+                                <div class="status-wrapper">
+                                    <div class="status-info">
+                                        <strong>${doc.name}</strong>
+                                        <span class="status-date">${doc.timestamp || ''}</span>
+                                    </div>
+                                </div>
+                                <div class="status-container">
+                                    <div class="status-badge">&#9679; <span>${doc.status}</span></div>
+                                </div>
+                                <div>
+                                    <button class="button-outlined download-document">Download Document</button>
+                                    <button class="button-outlined refresh-status">Refresh</button>
+                                    <button class="btn btn-dark d-none loading-button" type="button" disabled>
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        Refresh
+                                    </button>
+                                </div>
+                            `;
+
+                            li.querySelector('.download-document').addEventListener('click', async () => {
+                                const res = await fetch('/api/samples/UploadEmbeddedEditingAndInvite', {
+                                    method : 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body   : JSON.stringify({ document_id: documentId, action: 'download-document' })
+                                });
+                                if (!res.ok) throw new Error('Download failed');
+                                const blob = await res.blob();
+                                const url  = window.URL.createObjectURL(blob);
+                                Object.assign(document.createElement('a'), { href: url, download: 'document.pdf' }).click();
+                                window.URL.revokeObjectURL(url);
+                            });
+
+                            li.querySelector('.refresh-status').addEventListener('click', async () => {
+                                const refreshBtn  = li.querySelector('.refresh-status');
+                                const loadingBtn  = li.querySelector('.loading-button');
+                                refreshBtn.classList.add('d-none');
+                                loadingBtn.classList.remove('d-none');
+                                try {
+                                    await updateStatuses();
+                                } finally {
+                                    refreshBtn.classList.remove('d-none');
+                                    loadingBtn.classList.add('d-none');
+                                }
+                            });
+
+                            documentList.appendChild(li);
+                        });
+                    } else {
+                        noRecipientsContainer.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Something went wrong while updating statuses.');
+                }
+            }
+
+            await updateStatuses();
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await handlePages({
+                'upload-page': initUploadPage,
+                'invite-page': initInvitePage,
+                'status-page': initStatusPage
+            }, 'upload-page');
+        });
+    </script>
+</body>
+</html>

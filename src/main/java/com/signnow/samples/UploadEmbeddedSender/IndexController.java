@@ -20,6 +20,7 @@ import com.signnow.api.documentgroup.response.DownloadDocumentGroupPostResponse;
 import com.signnow.core.ApiClient;
 import com.signnow.core.exception.SignNowApiException;
 import com.signnow.javasampleapp.ExampleInterface;
+import com.signnow.javasampleapp.config.AppConfig;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
@@ -143,7 +144,7 @@ public class IndexController implements ExampleInterface {
 
     private Map<String, Object> createEmbeddedSendingUrl(ApiClient client, String documentGroupId) throws SignNowApiException {
         // Return URL after embedded sending to redirect to status page
-        String redirectUrl = "http://localhost:8080/samples/UploadEmbeddedSender?" +
+        String redirectUrl = AppConfig.sampleUrl("UploadEmbeddedSender") + "?" +
                 "page=status-page&document_group_id=" + documentGroupId;
 
         DocumentGroupEmbeddedSendingLinkPostRequest embeddedSendingRequest = new DocumentGroupEmbeddedSendingLinkPostRequest(
